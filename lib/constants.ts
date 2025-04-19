@@ -1,0 +1,24 @@
+export const CAR_BRANDS = [
+  "Audi",
+  "BMW",
+  "Chevrolet",
+  "Ford",
+  "Honda",
+  "Hyundai",
+  "Kia",
+  "Lexus",
+  "Mazda",
+  "Mercedes-Benz",
+  "Nissan",
+  "Subaru",
+  "Tesla",
+  "Toyota",
+  "Volkswagen",
+  "Volvo",
+]
+
+export const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG", "CNG"]
+
+export const GEARBOX_TYPES = ["Manual", "Automatic", "Semi-automatic", "CVT"]
+
+export const CONDITIONS = ["New", "Used", "Certified Pre-Owned"]
