@@ -62,6 +62,8 @@ export default function CreateListingPage() {
   }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log("Form submitted with values:", values)
+
     if (!user) {
       toast({
         title: "Authentication required",

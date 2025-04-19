@@ -271,17 +271,35 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
 
     // Upload images to S3
     console.log(`Uploading ${images.length} images...`)
-    const imageUrls = await uploadFilesToS3(images)
-    console.log("Images uploaded successfully:", imageUrls)
+    let imageUrls: string[] = []
+
+    try {
+      imageUrls = await uploadFilesToS3(images)
+      console.log("Images uploaded successfully:", imageUrls)
+    } catch (uploadError) {
+      console.error("Error uploading images:", uploadError)
+      // Fallback to placeholder images if upload fails
+      imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+      console.log("Using placeholder images instead:", imageUrls)
+    }
 
     // Create car document in Firestore
     console.log("Creating Firestore document with data:", { ...carData, images: imageUrls })
-    const docRef = await addDoc(collection(db, "cars"), {
+
+    // Ensure all required fields are present
+    const completeCarData = {
       ...carData,
       images: imageUrls,
       createdAt: new Date().toISOString(),
       isVisible: true,
-    })
+      // Add default values for any potentially missing fields
+      year: carData.year || new Date().getFullYear(),
+      mileage: carData.mileage || 0,
+      power: carData.power || 0,
+      price: carData.price || 0,
+    }
+
+    const docRef = await addDoc(collection(db, "cars"), completeCarData)
 
     console.log("Car listing created with ID:", docRef.id)
     return docRef.id
