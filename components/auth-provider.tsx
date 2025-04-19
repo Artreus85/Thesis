@@ -4,13 +4,12 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { onAuthStateChanged, getAuth } from "firebase/auth"
-import {
-  getUserById,
-  signIn as firebaseSignIn,
-  signOut as firebaseSignOut,
-  signUp as firebaseSignUp,
-} from "@/lib/firebase"
+import { getFirestore, doc, getDoc } from "firebase/firestore"
+import { signIn as firebaseSignIn, signOut as firebaseSignOut, signUp as firebaseSignUp } from "@/lib/firebase"
 import type { User } from "@/lib/types"
+
+// Initialize Firestore
+const db = getFirestore()
 
 interface AuthContextType {
   user: (User & { id: string }) | null
@@ -43,12 +42,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (firebaseUser) {
           try {
-            // Try to get user data from Firestore
-            const userData = await getUserById(firebaseUser.uid)
+            // Try to get user data from Firestore using the UID as document ID
+            const userDocRef = doc(db, "users", firebaseUser.uid)
+            const userDocSnap = await getDoc(userDocRef)
 
-            if (userData) {
+            if (userDocSnap.exists()) {
               console.log("User data retrieved from Firestore")
-              setUser(userData as User & { id: string })
+              const userData = userDocSnap.data()
+              setUser({
+                id: firebaseUser.uid,
+                ...userData,
+                createdAt: userData.createdAt || new Date().toISOString(),
+              })
             } else {
               console.log("No user data found in Firestore, using Firebase user data")
               // Fallback to basic user data from Firebase Auth

@@ -11,6 +11,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   type Timestamp,
 } from "firebase/firestore"
 import {
@@ -40,7 +41,7 @@ export async function getUserById(userId: string): Promise<User | null> {
       return {
         id: userDoc.id,
         ...userData,
-        createdAt: userData.createdAt?.toDate().toISOString(),
+        createdAt: userData.createdAt || new Date().toISOString(),
       } as User
     } else {
       return null
@@ -68,12 +69,12 @@ export async function signIn(email: string, password: string): Promise<void> {
  */
 export async function signUp(name: string, email: string, password: string): Promise<void> {
   try {
+    // Create the user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     const user = userCredential.user
 
-    // Create user document in Firestore
-    await addDoc(collection(db, "users"), {
-      id: user.uid,
+    // Create user document in Firestore using the Firebase Auth UID as the document ID
+    await setDoc(doc(db, "users", user.uid), {
       name: name,
       email: email,
       role: "regular",

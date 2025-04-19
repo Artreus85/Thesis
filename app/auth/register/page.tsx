@@ -43,11 +43,23 @@ export default function RegisterPage() {
         description: "Welcome to CarMarket! You can now log in.",
       })
       router.push("/auth/login")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error)
+
+      // Provide more specific error messages based on Firebase error codes
+      let errorMessage = "There was an error creating your account. Please try again."
+
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "This email is already registered. Please use a different email or try logging in."
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password is too weak. Please use a stronger password."
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address. Please check and try again."
+      }
+
       toast({
         title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
