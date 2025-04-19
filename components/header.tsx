@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth"
 
 export function Header() {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, signOut, loading } = useAuth()
 
   const routes = [
     {
@@ -64,10 +64,13 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          {user ? (
+          {loading ? (
+            // Show a subtle loading state
+            <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
+          ) : user ? (
             <>
-              <Link href="/listings/create">
-                <Button variant="ghost" size="sm" className="hidden md:flex">
+              <Link href="/listings/create" className="hidden md:block">
+                <Button variant="ghost" size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Listing
                 </Button>
@@ -79,18 +82,18 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/dashboard" className="flex w-full">
                       My Dashboard
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/listings/create" className="flex w-full">
                       Add Listing
                     </Link>
                   </DropdownMenuItem>
                   {user.role === "admin" && (
-                    <DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/admin" className="flex w-full">
                         Admin Panel
                       </Link>
@@ -102,8 +105,8 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="hidden md:flex">
+            <Link href="/auth/login" className="hidden md:block">
+              <Button variant="ghost" size="sm">
                 <LogIn className="mr-2 h-4 w-4" />
                 Log In
               </Button>
