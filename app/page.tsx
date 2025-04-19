@@ -8,16 +8,12 @@ export const dynamic = "force-dynamic"
 
 export default async function Home() {
   // Add error handling and fallback data
-  let cars = []
+  let cars: any[] = []
 
   try {
     // Dynamically import to prevent build errors
-    const { getAllCarListings } = await import("@/lib/firebase")
-    console.log("Fetching car listings for homepage...")
-
-    // Use getAllCarListings instead of getCarListings to get all cars regardless of isVisible
-    cars = await getAllCarListings(8) // Limit to 8 featured listings
-    console.log(`Fetched ${cars.length} car listings for homepage`)
+    const { getCarListings } = await import("@/lib/firebase")
+    cars = await getCarListings(8) // Limit to 8 featured listings
   } catch (error) {
     console.error("Error fetching car listings:", error)
     // Provide fallback data if fetch fails
@@ -41,7 +37,7 @@ export default async function Home() {
               <Link href="/cars">
                 <Button size="lg">Browse Cars</Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/listings/create">
                 <Button variant="outline" size="lg">
                   Sell Your Car
                 </Button>
@@ -73,6 +69,39 @@ export default async function Home() {
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="py-12 bg-gray-50 rounded-xl my-12">
+        <div className="container px-4 md:px-6">
+          <div className="grid gap-6 lg:grid-cols-3 items-center">
+            <div className="space-y-4">
+              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Easy Process</div>
+              <h3 className="text-2xl font-bold">Sell Your Car in 3 Simple Steps</h3>
+              <p className="text-gray-500">Create an account, add your listing with photos, and connect with buyers.</p>
+              <Link href="/auth/register">
+                <Button>Get Started</Button>
+              </Link>
+            </div>
+            <div className="space-y-4">
+              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Verified Sellers</div>
+              <h3 className="text-2xl font-bold">Buy with Confidence</h3>
+              <p className="text-gray-500">
+                All sellers are verified and listings are reviewed for quality and accuracy.
+              </p>
+              <Link href="/about">
+                <Button variant="outline">Learn More</Button>
+              </Link>
+            </div>
+            <div className="space-y-4">
+              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Support</div>
+              <h3 className="text-2xl font-bold">Need Help?</h3>
+              <p className="text-gray-500">Our support team is available to assist you with any questions or issues.</p>
+              <Link href="/contact">
+                <Button variant="outline">Contact Us</Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>
