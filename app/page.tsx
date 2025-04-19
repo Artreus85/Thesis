@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { getCarListings } from "@/lib/firebase"
 
 export default async function Home() {
-  const cars = 0; //await getCarListings(8) // Limit to 8 featured listings
+  const cars = await getCarListings(8) // Limit to 8 featured listings
 
   return (
     <div className="container mx-auto px-4 py-8">

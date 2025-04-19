@@ -4,6 +4,8 @@ import { SearchFilters } from "@/components/search-filters"
 import { getFilteredCars } from "@/lib/firebase"
 import { Skeleton } from "@/components/ui/skeleton"
 
+export const dynamic = 'force-dynamic';
+
 interface CarsPageProps {
   searchParams: {
     brand?: string
