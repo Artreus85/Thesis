@@ -285,22 +285,51 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
   }
 }
 
+// Add this function to check if cars exist without filters
+export async function checkCarsExist(): Promise<boolean> {
+  try {
+    const carsRef = collection(db, "cars")
+    const snapshot = await getDocs(carsRef)
+    console.log(`Found ${snapshot.docs.length} total car documents in Firebase`)
+
+    // Log the first few documents to inspect
+    snapshot.docs.slice(0, 3).forEach((doc) => {
+      console.log(`Car document ${doc.id}:`, doc.data())
+    })
+
+    return snapshot.docs.length > 0
+  } catch (error) {
+    console.error("Error checking if cars exist:", error)
+    return false
+  }
+}
+
 /**
  * Get car listings
  */
 export async function getCarListings(limit: number): Promise<Car[]> {
   try {
+    console.log(`Getting car listings with limit: ${limit}`)
     const carsRef = collection(db, "cars")
+
+    // First check if any cars exist at all
+    const allCarsSnapshot = await getDocs(carsRef)
+    console.log(`Total cars in database: ${allCarsSnapshot.docs.length}`)
+
+    // Now get the filtered cars
     const q = query(carsRef, where("isVisible", "==", true), orderBy("createdAt", "desc"), limit ? limit : 20)
+    console.log("Executing filtered query...")
     const snapshot = await getDocs(q)
+    console.log(`Filtered query returned ${snapshot.docs.length} cars`)
 
     return snapshot.docs.map((doc) => {
       const data = doc.data()
+      console.log(`Processing car ${doc.id}:`, data)
 
       // Convert Firestore Timestamp to string if it exists
       if (data.createdAt && typeof data.createdAt !== "string") {
-        const timestamp = data.createdAt as Timestamp
-        data.createdAt = timestamp.toDate().toISOString()
+        const timestamp = data.createdAt
+        data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
       }
 
       return {

@@ -13,7 +13,9 @@ export default async function Home() {
   try {
     // Dynamically import to prevent build errors
     const { getCarListings } = await import("@/lib/firebase")
+    console.log("Fetching car listings...")
     cars = await getCarListings(8) // Limit to 8 featured listings
+    console.log(`Fetched ${cars.length} car listings:`, cars)
   } catch (error) {
     console.error("Error fetching car listings:", error)
     // Provide fallback data if fetch fails
@@ -71,8 +73,6 @@ export default async function Home() {
           )}
         </div>
       </section>
-
-      {/* The three-column section has been removed */}
     </div>
   )
 }
