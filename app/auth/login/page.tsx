@@ -30,12 +30,25 @@ export default function LoginPage() {
         title: "Login successful",
         description: "Welcome back to CarMarket!",
       })
-      router.push("/dashboard")
-    } catch (error) {
+      // Redirect to home page instead of dashboard
+      router.push("/")
+    } catch (error: any) {
       console.error("Login error:", error)
+
+      // Provide more specific error messages based on Firebase error codes
+      let errorMessage = "Invalid email or password. Please try again."
+
+      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+        errorMessage = "Invalid email or password. Please try again."
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed login attempts. Please try again later."
+      } else if (error.code === "auth/user-disabled") {
+        errorMessage = "This account has been disabled. Please contact support."
+      }
+
       toast({
         title: "Login failed",
-        description: "Invalid email or password. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

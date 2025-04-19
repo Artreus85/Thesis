@@ -40,9 +40,10 @@ export default function RegisterPage() {
       await signUp(name, email, password)
       toast({
         title: "Registration successful",
-        description: "Welcome to CarMarket! You can now log in.",
+        description: "Welcome to CarMarket! You are now logged in.",
       })
-      router.push("/auth/login")
+      // Redirect to home page instead of login page
+      router.push("/")
     } catch (error: any) {
       console.error("Registration error:", error)
 
