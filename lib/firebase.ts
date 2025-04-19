@@ -315,25 +315,29 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
   try {
     console.log("Starting car listing creation process")
 
-    // Upload images to S3
-    console.log(`Uploading ${images.length} images...`)
-    let imageUrls: string[] = []
+    // Check if we already have image URLs in the carData
+    let imageUrls: string[] = carData.images || []
 
-    try {
-      if (isPreviewEnvironment()) {
-        // In preview environment, use placeholder images
+    // Only upload images if they're provided and we don't already have URLs
+    if (images.length > 0 && imageUrls.length === 0) {
+      console.log(`Uploading ${images.length} images...`)
+
+      try {
+        if (isPreviewEnvironment()) {
+          // In preview environment, use placeholder images
+          imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+          console.log("Using placeholder images in preview environment:", imageUrls)
+        } else {
+          // In production, upload to S3
+          imageUrls = await uploadFilesToS3(images)
+          console.log("Images uploaded successfully to S3:", imageUrls)
+        }
+      } catch (uploadError) {
+        console.error("Error uploading images:", uploadError)
+        // Fallback to placeholder images if upload fails
         imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
-        console.log("Using placeholder images in preview environment:", imageUrls)
-      } else {
-        // In production, upload to S3
-        imageUrls = await uploadFilesToS3(images)
-        console.log("Images uploaded successfully to S3:", imageUrls)
+        console.log("Using placeholder images instead:", imageUrls)
       }
-    } catch (uploadError) {
-      console.error("Error uploading images:", uploadError)
-      // Fallback to placeholder images if upload fails
-      imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
-      console.log("Using placeholder images instead:", imageUrls)
     }
 
     // Create car document in Firestore

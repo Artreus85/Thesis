@@ -13,10 +13,12 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
 import { createCarListing } from "@/lib/firebase"
+import { uploadFilesToS3 } from "@/lib/s3"
 import { CAR_BRANDS, FUEL_TYPES, GEARBOX_TYPES, CONDITIONS } from "@/lib/constants"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { isPreviewEnvironment } from "@/lib/environment"
 
 const formSchema = z.object({
   brand: z.string().min(1, "Brand is required"),
@@ -116,7 +118,28 @@ export default function CreateListingPage() {
         })
       }, 500)
 
-      // Create car listing with images
+      // Step 1: Upload images to S3 first
+      console.log("Uploading images to S3...")
+      let imageUrls: string[] = []
+
+      try {
+        if (isPreviewEnvironment()) {
+          // In preview environment, use placeholder images
+          imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+          console.log("Using placeholder images in preview environment:", imageUrls)
+        } else {
+          // In production, upload to S3 directly
+          imageUrls = await uploadFilesToS3(images)
+          console.log("Images uploaded successfully to S3:", imageUrls)
+        }
+      } catch (uploadError) {
+        console.error("Error uploading images:", uploadError)
+        // Fallback to placeholder images if upload fails
+        imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+        console.log("Using placeholder images instead:", imageUrls)
+      }
+
+      // Step 2: Create car listing with the uploaded image URLs
       const carData = {
         brand: values.brand,
         model: values.model,
@@ -128,7 +151,7 @@ export default function CreateListingPage() {
         price: Number.parseInt(values.price),
         condition: values.condition,
         description: values.description,
-        images: [], // This will be populated by the createCarListing function
+        images: imageUrls, // Use the uploaded image URLs
         userId: user.id,
         createdAt: new Date().toISOString(),
         isVisible: true, // Make sure listings are visible by default
@@ -141,7 +164,8 @@ export default function CreateListingPage() {
         throw new Error("User ID is missing. Please log in again.")
       }
 
-      const listingId = await createCarListing(carData, images)
+      // Create the listing in Firestore
+      const listingId = await createCarListing(carData, []) // Pass empty array since we already uploaded images
       console.log("Listing created with ID:", listingId)
 
       clearInterval(progressInterval)
