@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 // Add dynamic export to ensure server-side rendering
 export const dynamic = "force-dynamic"
 
+// Update the Home function to handle the new return type from getCarListings
+
 export default async function Home() {
   // Add error handling and fallback data
   let cars: any[] = []
@@ -13,7 +15,12 @@ export default async function Home() {
   try {
     // Dynamically import to prevent build errors
     const { getCarListings } = await import("@/lib/firebase")
-    cars = await getCarListings(8) // Limit to 8 featured listings
+    console.log("Fetching car listings for homepage...")
+
+    // Destructure the result to get just the cars array
+    const result = await getCarListings(8) // Limit to 8 featured listings
+    cars = result.cars
+    console.log(`Fetched ${cars.length} car listings for homepage`)
   } catch (error) {
     console.error("Error fetching car listings:", error)
     // Provide fallback data if fetch fails
@@ -37,7 +44,7 @@ export default async function Home() {
               <Link href="/cars">
                 <Button size="lg">Browse Cars</Button>
               </Link>
-              <Link href="/listings/create">
+              <Link href="/auth/login">
                 <Button variant="outline" size="lg">
                   Sell Your Car
                 </Button>
@@ -69,39 +76,6 @@ export default async function Home() {
               </Link>
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="py-12 bg-gray-50 rounded-xl my-12">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-6 lg:grid-cols-3 items-center">
-            <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Easy Process</div>
-              <h3 className="text-2xl font-bold">Sell Your Car in 3 Simple Steps</h3>
-              <p className="text-gray-500">Create an account, add your listing with photos, and connect with buyers.</p>
-              <Link href="/auth/register">
-                <Button>Get Started</Button>
-              </Link>
-            </div>
-            <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Verified Sellers</div>
-              <h3 className="text-2xl font-bold">Buy with Confidence</h3>
-              <p className="text-gray-500">
-                All sellers are verified and listings are reviewed for quality and accuracy.
-              </p>
-              <Link href="/about">
-                <Button variant="outline">Learn More</Button>
-              </Link>
-            </div>
-            <div className="space-y-4">
-              <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm">Support</div>
-              <h3 className="text-2xl font-bold">Need Help?</h3>
-              <p className="text-gray-500">Our support team is available to assist you with any questions or issues.</p>
-              <Link href="/contact">
-                <Button variant="outline">Contact Us</Button>
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
     </div>
