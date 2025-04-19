@@ -50,7 +50,8 @@ export default function Dashboard() {
           setError("Failed to load your listings. Please try again later.")
           toast({
             title: "Error",
-            description: "Failed to load your listings. Please try again later.",
+            description:
+              "Failed to load your listings. You may need to create a Firestore index. Check the console for details.",
             variant: "destructive",
           })
         } finally {

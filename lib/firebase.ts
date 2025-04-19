@@ -514,19 +514,45 @@ export async function getUserListings(userId: string): Promise<Car[]> {
   try {
     console.log(`Getting listings for user: ${userId}`)
     const carsRef = collection(db, "cars")
-    const q = query(carsRef, where("userId", "==", userId), orderBy("createdAt", "desc"))
 
-    const snapshot = await getDocs(q)
-    console.log(`Found ${snapshot.docs.length} listings for user`)
+    try {
+      // Try the query with ordering (requires index)
+      const q = query(carsRef, where("userId", "==", userId), orderBy("createdAt", "desc"))
+      const snapshot = await getDocs(q)
+      console.log(`Found ${snapshot.docs.length} listings for user`)
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data()
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-      } as Car
-    })
+      return snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        } as Car
+      })
+    } catch (indexError) {
+      // If index error occurs, fall back to simple query without ordering
+      console.warn("Index not yet available, falling back to unordered query:", indexError)
+      const fallbackQuery = query(carsRef, where("userId", "==", userId))
+      const fallbackSnapshot = await getDocs(fallbackQuery)
+      console.log(`Found ${fallbackSnapshot.docs.length} listings for user (unordered)`)
+
+      // Sort the results in memory instead
+      const results = fallbackSnapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        } as Car
+      })
+
+      // Sort manually by createdAt in descending order
+      return results.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime()
+        const dateB = new Date(b.createdAt).getTime()
+        return dateB - dateA // Descending order
+      })
+    }
   } catch (error) {
     console.error(`Error fetching listings for user ${userId}:`, error)
     return []
