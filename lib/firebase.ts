@@ -25,6 +25,7 @@ import { uploadFilesToS3, deleteFileFromS3 } from "./s3"
 import { firebaseConfig } from "./firebase-config"
 import { isPreviewEnvironment } from "./environment"
 import type { User, Car } from "./types"
+import type { QuerySnapshot, DocumentData } from "firebase/firestore"
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
@@ -518,7 +519,15 @@ export async function getUserListings(userId: string): Promise<Car[]> {
     try {
       // Try the query with ordering (requires index)
       const q = query(carsRef, where("userId", "==", userId), orderBy("createdAt", "desc"))
-      const snapshot = await getDocs(q)
+
+      // Add timeout to detect potential blocking
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Firestore query timed out - connection may be blocked")), 10000)
+      })
+
+      // Race between the query and the timeout
+      const snapshot = (await Promise.race([getDocs(q), timeoutPromise])) as QuerySnapshot<DocumentData>
+
       console.log(`Found ${snapshot.docs.length} listings for user`)
 
       return snapshot.docs.map((doc) => {
@@ -530,6 +539,17 @@ export async function getUserListings(userId: string): Promise<Car[]> {
         } as Car
       })
     } catch (indexError) {
+      // Check if this is a connection error
+      if (
+        indexError instanceof Error &&
+        (indexError.message.includes("network") ||
+          indexError.message.includes("timeout") ||
+          indexError.message.includes("blocked"))
+      ) {
+        console.error("Connection error detected:", indexError)
+        throw indexError // Rethrow to be handled by the error handler
+      }
+
       // If index error occurs, fall back to simple query without ordering
       console.warn("Index not yet available, falling back to unordered query:", indexError)
       const fallbackQuery = query(carsRef, where("userId", "==", userId))
@@ -555,6 +575,6 @@ export async function getUserListings(userId: string): Promise<Car[]> {
     }
   } catch (error) {
     console.error(`Error fetching listings for user ${userId}:`, error)
-    return []
+    throw error // Rethrow to be handled by the error handler
   }
 }
