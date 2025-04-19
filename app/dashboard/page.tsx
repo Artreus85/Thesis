@@ -19,10 +19,23 @@ export default function Dashboard() {
   const [listings, setListings] = useState<CarType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
+  // First effect just to track when auth is checked
   useEffect(() => {
-    // Only fetch data if authentication is complete and user is logged in
-    if (!authLoading && user) {
+    if (!authLoading) {
+      setAuthChecked(true)
+      console.log("Auth state checked, user:", user ? "logged in" : "not logged in")
+    }
+  }, [authLoading, user])
+
+  // Second effect to fetch data once auth is checked
+  useEffect(() => {
+    // Only run this effect if auth has been checked
+    if (!authChecked) return
+
+    // If user is logged in, fetch their listings
+    if (user) {
       const fetchData = async () => {
         try {
           console.log("Fetching listings for dashboard...")
@@ -48,18 +61,12 @@ export default function Dashboard() {
       }
 
       fetchData()
-    } else if (!authLoading && !user) {
-      // If authentication is complete and user is not logged in, redirect to login
-      // We'll use a client-side approach here to avoid SSR issues
-      console.log("User not authenticated, preparing to redirect...")
-      // Don't redirect immediately to avoid hydration issues
-      const timer = setTimeout(() => {
-        console.log("Redirecting to login page...")
-        router.push("/auth/login")
-      }, 100)
-      return () => clearTimeout(timer)
+    } else {
+      // If user is not logged in, redirect to login
+      console.log("User not authenticated, redirecting to login...")
+      router.push("/auth/login")
     }
-  }, [user, authLoading, router, toast])
+  }, [authChecked, user, router, toast])
 
   const handleDeleteListing = async (listingId: string) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {

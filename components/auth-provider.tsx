@@ -3,8 +3,7 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { onAuthStateChanged } from "firebase/auth"
-import { getAuth } from "firebase/auth"
+import { onAuthStateChanged, getAuth } from "firebase/auth"
 import {
   getUserById,
   signIn as firebaseSignIn,
@@ -36,18 +35,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log("Setting up auth state listener")
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("Auth state changed:", firebaseUser ? `User: ${firebaseUser.uid}` : "No user")
 
-      if (firebaseUser) {
-        try {
-          const userData = await getUserById(firebaseUser.uid)
-          if (userData) {
-            console.log("User data retrieved from Firestore")
-            setUser(userData as User & { id: string })
-          } else {
-            console.log("No user data found in Firestore, using Firebase user data")
-            // Fallback to basic user data from Firebase Auth
+    // This ensures Firebase has time to initialize
+    const timeoutId = setTimeout(() => {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log("Auth state changed:", firebaseUser ? `User: ${firebaseUser.uid}` : "No user")
+
+        if (firebaseUser) {
+          try {
+            // Try to get user data from Firestore
+            const userData = await getUserById(firebaseUser.uid)
+
+            if (userData) {
+              console.log("User data retrieved from Firestore")
+              setUser(userData as User & { id: string })
+            } else {
+              console.log("No user data found in Firestore, using Firebase user data")
+              // Fallback to basic user data from Firebase Auth
+              setUser({
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || "User",
+                email: firebaseUser.email || "",
+                role: "regular",
+                createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+              })
+            }
+          } catch (error) {
+            console.error("Error fetching user data:", error)
+            // Still set basic user data to prevent blocking the UI
             setUser({
               id: firebaseUser.uid,
               name: firebaseUser.displayName || "User",
@@ -56,25 +71,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
             })
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error)
-          // Still set basic user data to prevent blocking the UI
-          setUser({
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || "User",
-            email: firebaseUser.email || "",
-            role: "regular",
-            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-          })
+        } else {
+          setUser(null)
         }
-      } else {
-        setUser(null)
+
+        setLoading(false)
+      })
+
+      return () => {
+        unsubscribe()
+        clearTimeout(timeoutId)
       }
+    }, 100) // Small delay to ensure Firebase is initialized
 
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
+    return () => clearTimeout(timeoutId)
   }, [auth])
 
   const signIn = async (email: string, password: string) => {
