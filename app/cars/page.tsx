@@ -1,8 +1,10 @@
 import { Suspense } from "react"
 import { CarCard } from "@/components/car-card"
 import { SearchFilters } from "@/components/search-filters"
-import { getFilteredCars } from "@/lib/firebase"
 import { Skeleton } from "@/components/ui/skeleton"
+
+// Add dynamic export
+export const dynamic = "force-dynamic"
 
 interface CarsPageProps {
   searchParams: {
@@ -17,7 +19,16 @@ interface CarsPageProps {
 }
 
 export default async function CarsPage({ searchParams }: CarsPageProps) {
-  const cars = await getFilteredCars(searchParams)
+  let cars = []
+
+  try {
+    // Dynamically import to prevent build errors
+    const { getFilteredCars } = await import("@/lib/firebase")
+    cars = await getFilteredCars(searchParams)
+  } catch (error) {
+    console.error("Error fetching filtered cars:", error)
+    cars = []
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

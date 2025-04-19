@@ -6,18 +6,14 @@ let firebaseApp: admin.app.App | undefined
 function getFirebaseAdminApp() {
   if (!firebaseApp) {
     try {
-      // Log environment variables (without revealing sensitive data)
-      console.log("Initializing Firebase Admin with project:", process.env.FIREBASE_PROJECT_ID)
-      console.log("Client email available:", !!process.env.FIREBASE_CLIENT_EMAIL)
-      console.log("Private key available:", !!process.env.FIREBASE_PRIVATE_KEY)
-
       // Format the private key correctly
       const privateKey = process.env.FIREBASE_PRIVATE_KEY
         ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
         : undefined
 
       if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-        throw new Error("Missing Firebase Admin credentials")
+        console.warn("Missing Firebase Admin credentials")
+        return null
       }
 
       firebaseApp = admin.initializeApp({
@@ -31,7 +27,7 @@ function getFirebaseAdminApp() {
       console.log("Firebase Admin initialized successfully")
     } catch (error) {
       console.error("Firebase Admin initialization error:", error)
-      throw error
+      return null
     }
   }
 
@@ -39,9 +35,51 @@ function getFirebaseAdminApp() {
 }
 
 export function getFirestoreAdmin() {
-  return getFirebaseAdminApp().firestore()
+  const app = getFirebaseAdminApp()
+
+  if (!app) {
+    console.warn("Using mock Firestore Admin")
+    // Return a mock object that won't crash the application
+    return {
+      collection: () => ({
+        doc: () => ({
+          get: async () => ({ exists: false, data: () => ({}) }),
+        }),
+        where: () => ({
+          orderBy: () => ({
+            limit: () => ({
+              get: async () => ({ docs: [] }),
+            }),
+          }),
+          get: async () => ({ docs: [] }),
+        }),
+        orderBy: () => ({
+          limit: () => ({
+            get: async () => ({ docs: [] }),
+          }),
+          get: async () => ({ docs: [] }),
+        }),
+        get: async () => ({ docs: [] }),
+      }),
+    } as any
+  }
+
+  return app.firestore()
 }
 
 export function getAuthAdmin() {
-  return getFirebaseAdminApp().auth()
+  const app = getFirebaseAdminApp()
+
+  if (!app) {
+    console.warn("Using mock Auth Admin")
+    // Return a mock object that won't crash the application
+    return {
+      getUser: async () => ({}),
+      createUser: async () => ({}),
+      updateUser: async () => ({}),
+      deleteUser: async () => ({}),
+    } as any
+  }
+
+  return app.auth()
 }

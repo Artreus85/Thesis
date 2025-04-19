@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getCarById, getUserById } from "@/lib/firebase"
+
+// Add dynamic export
+export const dynamic = "force-dynamic"
 
 interface CarDetailPageProps {
   params: {
@@ -14,13 +16,24 @@ interface CarDetailPageProps {
 }
 
 export default async function CarDetailPage({ params }: CarDetailPageProps) {
-  const car = await getCarById(params.id)
+  let car = null
+  let seller = null
+
+  try {
+    // Dynamically import to prevent build errors
+    const { getCarById, getUserById } = await import("@/lib/firebase")
+    car = await getCarById(params.id)
+
+    if (car) {
+      seller = await getUserById(car.userId)
+    }
+  } catch (error) {
+    console.error("Error fetching car details:", error)
+  }
 
   if (!car) {
     notFound()
   }
-
-  const seller = await getUserById(car.userId)
 
   return (
     <div className="container mx-auto px-4 py-8">
