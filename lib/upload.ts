@@ -1,6 +1,3 @@
-/**
- * Client-side utility for uploading files to S3 using presigned URLs
- */
 import { isPreviewEnvironment } from "./environment"
 import { mockUploadMultipleToS3 } from "./fallback"
 import { mockUploadToS3 } from "./fallback" // Import mockUploadToS3

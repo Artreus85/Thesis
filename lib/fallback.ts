@@ -1,6 +1,3 @@
-/**
- * Fallback implementations for development and preview environments
- */
 import { isPreviewEnvironment } from "./environment"
 
 /**

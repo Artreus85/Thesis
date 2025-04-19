@@ -4,8 +4,6 @@ import { SearchFilters } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
 import { getCarListings } from "@/lib/firebase"
 
-export const dynamic = 'force-dynamic';
-
 export default async function Home() {
   const cars = await getCarListings(8) // Limit to 8 featured listings
 

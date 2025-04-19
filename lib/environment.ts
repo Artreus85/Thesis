@@ -1,7 +1,3 @@
-/**
- * Utility to detect the current environment
- */
-
 export function isServer() {
   return typeof window === "undefined"
 }
