@@ -44,7 +44,7 @@ export default async function Home() {
               <Link href="/cars">
                 <Button size="lg">Browse Cars</Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/listings/create">
                 <Button variant="outline" size="lg">
                   Sell Your Car
                 </Button>
