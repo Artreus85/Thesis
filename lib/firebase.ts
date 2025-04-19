@@ -284,3 +284,32 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
     throw error
   }
 }
+
+/**
+ * Get car listings
+ */
+export async function getCarListings(limit: number): Promise<Car[]> {
+  try {
+    const carsRef = collection(db, "cars")
+    const q = query(carsRef, where("isVisible", "==", true), orderBy("createdAt", "desc"), limit ? limit : 20)
+    const snapshot = await getDocs(q)
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data()
+
+      // Convert Firestore Timestamp to string if it exists
+      if (data.createdAt && typeof data.createdAt !== "string") {
+        const timestamp = data.createdAt as Timestamp
+        data.createdAt = timestamp.toDate().toISOString()
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+      } as Car
+    })
+  } catch (error) {
+    console.error("Error fetching car listings:", error)
+    return []
+  }
+}

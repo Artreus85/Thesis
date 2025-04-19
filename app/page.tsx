@@ -2,10 +2,23 @@ import Link from "next/link"
 import { CarCard } from "@/components/car-card"
 import { SearchFilters } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
-import { getCarListings } from "@/lib/firebase"
+
+// Add dynamic export
+export const dynamic = "force-dynamic"
 
 export default async function Home() {
-  const cars = await getCarListings(8) // Limit to 8 featured listings
+  // Add error handling and fallback data
+  let cars = []
+
+  try {
+    // Dynamically import to prevent build errors
+    const { getCarListings } = await import("@/lib/firebase")
+    cars = await getCarListings(8) // Limit to 8 featured listings
+  } catch (error) {
+    console.error("Error fetching car listings:", error)
+    // Provide fallback data if fetch fails
+    cars = []
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
