@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getValidImageUrl } from "@/lib/image-fallback"
 
 // Add dynamic export
 export const dynamic = "force-dynamic"
@@ -38,8 +39,11 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
   // Ensure car has images array
   const images = car.images || []
 
-  // Default image if none provided
-  const defaultImage = `/placeholder.svg?height=400&width=600&query=${car.brand} ${car.model}`
+  // Get valid image URLs or fallbacks
+  const mainImage = images.length > 0 ? getValidImageUrl(images[0], car) : getValidImageUrl(null, car)
+  const additionalImages = images
+    .slice(1, 5)
+    .map((img, index) => getValidImageUrl(img, { brand: car.brand, model: `${car.model} ${index + 1}` }))
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,7 +51,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
         <div className="lg:col-span-2">
           <div className="relative aspect-video overflow-hidden rounded-lg mb-4">
             <Image
-              src={images[0] || defaultImage}
+              src={mainImage || "/placeholder.svg"}
               alt={`${car.brand} ${car.model}`}
               fill
               className="object-cover"
@@ -58,10 +62,10 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
           </div>
 
           <div className="grid grid-cols-4 gap-2 mb-6">
-            {images.slice(1, 5).map((image, index) => (
+            {additionalImages.map((image, index) => (
               <div key={index} className="relative aspect-video overflow-hidden rounded-lg">
                 <Image
-                  src={image || `/placeholder.svg?height=100&width=150&query=${car.brand} ${car.model} ${index + 1}`}
+                  src={image || "/placeholder.svg"}
                   alt={`${car.brand} ${car.model} - Image ${index + 1}`}
                   fill
                   className="object-cover"
@@ -71,6 +75,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
             ))}
           </div>
 
+          {/* Rest of the component remains the same */}
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details">Details</TabsTrigger>

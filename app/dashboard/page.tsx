@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Car, Heart, Plus, Trash, User, Edit, Eye, WifiOff } from "lucide-react"
+import { Car, Heart, Plus, Trash, User, Edit, Eye, WifiOff, ImageOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
 import { getUserListings, deleteListing } from "@/lib/firebase"
-import { getDefaultCarImage } from "@/lib/image-utils"
+import { getValidImageUrl } from "@/lib/image-fallback"
 import { handleFirestoreError } from "@/lib/firebase-error-handler"
 import type { Car as CarType } from "@/lib/types"
 
@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
 
   // First effect just to track when auth is checked
   useEffect(() => {
@@ -81,6 +82,13 @@ export default function Dashboard() {
         handleFirestoreError(error, "Failed to delete listing")
       }
     }
+  }
+
+  const handleImageError = (listingId: string) => {
+    setImageErrors((prev) => ({
+      ...prev,
+      [listingId]: true,
+    }))
   }
 
   // Show loading state while authentication is in progress
@@ -194,13 +202,20 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-video relative rounded-md overflow-hidden mb-2">
-                      <Image
-                        src={listing.images?.[0] || getDefaultCarImage(listing)}
-                        alt={`${listing.brand} ${listing.model}`}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
+                      {imageErrors[listing.id] ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                          <ImageOff className="h-12 w-12 text-gray-400" />
+                        </div>
+                      ) : (
+                        <Image
+                          src={getValidImageUrl(listing.images?.[0], listing) || "/placeholder.svg"}
+                          alt={`${listing.brand} ${listing.model}`}
+                          fill
+                          className="object-cover"
+                          onError={() => handleImageError(listing.id)}
+                          unoptimized
+                        />
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       <p>Year: {listing.year || "N/A"}</p>

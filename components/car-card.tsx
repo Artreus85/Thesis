@@ -2,35 +2,45 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Calendar, Fuel, Gauge, Heart } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { getValidImageUrl } from "@/lib/image-fallback"
 import type { Car } from "@/lib/types"
-import { useState } from "react"
 
 interface CarCardProps {
   car: Car
 }
 
 export function CarCard({ car }: CarCardProps) {
+  const [imageUrl, setImageUrl] = useState<string>("")
   const [imageError, setImageError] = useState(false)
 
-  // Default image if none provided or if there's an error
-  const defaultImage = `/placeholder.svg?height=200&width=300&query=${car.brand} ${car.model}`
+  // Set initial image URL
+  useEffect(() => {
+    // Get the first image or use default
+    const initialUrl = car.images && car.images.length > 0 ? car.images[0] : getValidImageUrl(null, car)
 
-  // Get the first image or use default
-  const imageUrl = car.images && car.images.length > 0 && !imageError ? car.images[0] : defaultImage
+    setImageUrl(initialUrl)
+  }, [car])
+
+  // Handle image error
+  const handleImageError = () => {
+    setImageError(true)
+    setImageUrl(getValidImageUrl(null, car))
+  }
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video overflow-hidden">
         <Image
-          src={imageUrl || "/placeholder.svg"}
+          src={imageError ? getValidImageUrl(null, car) : imageUrl}
           alt={`${car.brand} ${car.model}`}
           fill
           className="object-cover transition-transform hover:scale-105"
-          onError={() => setImageError(true)}
+          onError={handleImageError}
           unoptimized // Use this for external URLs
         />
         <Button
