@@ -304,9 +304,40 @@ export async function checkCarsExist(): Promise<boolean> {
   }
 }
 
-/**
- * Get car listings
- */
+// Add this function to get car listings without the isVisible filter
+export async function getAllCarListings(limit?: number): Promise<Car[]> {
+  try {
+    console.log(`Getting ALL car listings${limit ? ` with limit: ${limit}` : ""}`)
+    const carsRef = collection(db, "cars")
+
+    // Query without the isVisible filter
+    const q = limit ? query(carsRef, orderBy("createdAt", "desc"), limit) : query(carsRef, orderBy("createdAt", "desc"))
+
+    console.log("Executing query without isVisible filter...")
+    const snapshot = await getDocs(q)
+    console.log(`Query returned ${snapshot.docs.length} cars`)
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data()
+
+      // Convert Firestore Timestamp to string if it exists
+      if (data.createdAt && typeof data.createdAt !== "string") {
+        const timestamp = data.createdAt
+        data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+      } as Car
+    })
+  } catch (error) {
+    console.error("Error fetching all car listings:", error)
+    return []
+  }
+}
+
+// Modify the getCarListings function to handle the case where isVisible might not exist
 export async function getCarListings(limit: number): Promise<Car[]> {
   try {
     console.log(`Getting car listings with limit: ${limit}`)
@@ -316,7 +347,32 @@ export async function getCarListings(limit: number): Promise<Car[]> {
     const allCarsSnapshot = await getDocs(carsRef)
     console.log(`Total cars in database: ${allCarsSnapshot.docs.length}`)
 
-    // Now get the filtered cars
+    // If no cars have isVisible field, return all cars
+    const hasVisibleField = allCarsSnapshot.docs.some((doc) => "isVisible" in doc.data())
+
+    if (!hasVisibleField && allCarsSnapshot.docs.length > 0) {
+      console.log("No cars have isVisible field, returning all cars")
+      const q = query(carsRef, orderBy("createdAt", "desc"), limit ? limit : 20)
+      const snapshot = await getDocs(q)
+
+      return snapshot.docs.map((doc) => {
+        const data = doc.data()
+
+        // Convert Firestore Timestamp to string if it exists
+        if (data.createdAt && typeof data.createdAt !== "string") {
+          const timestamp = data.createdAt
+          data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
+        }
+
+        return {
+          id: doc.id,
+          ...data,
+          isVisible: true, // Add isVisible field if it doesn't exist
+        } as Car
+      })
+    }
+
+    // Otherwise use the original query with isVisible filter
     const q = query(carsRef, where("isVisible", "==", true), orderBy("createdAt", "desc"), limit ? limit : 20)
     console.log("Executing filtered query...")
     const snapshot = await getDocs(q)
@@ -324,7 +380,6 @@ export async function getCarListings(limit: number): Promise<Car[]> {
 
     return snapshot.docs.map((doc) => {
       const data = doc.data()
-      console.log(`Processing car ${doc.id}:`, data)
 
       // Convert Firestore Timestamp to string if it exists
       if (data.createdAt && typeof data.createdAt !== "string") {

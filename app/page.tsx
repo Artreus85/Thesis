@@ -12,10 +12,12 @@ export default async function Home() {
 
   try {
     // Dynamically import to prevent build errors
-    const { getCarListings } = await import("@/lib/firebase")
-    console.log("Fetching car listings...")
-    cars = await getCarListings(8) // Limit to 8 featured listings
-    console.log(`Fetched ${cars.length} car listings:`, cars)
+    const { getAllCarListings } = await import("@/lib/firebase")
+    console.log("Fetching car listings for homepage...")
+
+    // Use getAllCarListings instead of getCarListings to get all cars regardless of isVisible
+    cars = await getAllCarListings(8) // Limit to 8 featured listings
+    console.log(`Fetched ${cars.length} car listings for homepage`)
   } catch (error) {
     console.error("Error fetching car listings:", error)
     // Provide fallback data if fetch fails
