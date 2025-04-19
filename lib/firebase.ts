@@ -12,16 +12,18 @@ import {
   updateDoc,
   deleteDoc,
   setDoc,
-  type Timestamp,
+  limit as firestoreLimit,
 } from "firebase/firestore"
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOutFn,
+  updateProfile,
 } from "firebase/auth"
 import { uploadFilesToS3, deleteFileFromS3 } from "./s3"
 import { firebaseConfig } from "./firebase-config"
+import { isPreviewEnvironment } from "./environment"
 import type { User, Car } from "./types"
 
 // Initialize Firebase
@@ -41,7 +43,7 @@ export async function getUserById(userId: string): Promise<User | null> {
       return {
         id: userDoc.id,
         ...userData,
-        createdAt: userData.createdAt || new Date().toISOString(),
+        createdAt: userData.createdAt?.toDate?.() ? userData.createdAt.toDate().toISOString() : userData.createdAt,
       } as User
     } else {
       return null
@@ -72,6 +74,11 @@ export async function signUp(name: string, email: string, password: string): Pro
     // Create the user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     const user = userCredential.user
+
+    // Update the user profile with the name
+    await updateProfile(user, {
+      displayName: name,
+    })
 
     // Create user document in Firestore using the Firebase Auth UID as the document ID
     await setDoc(doc(db, "users", user.uid), {
@@ -105,11 +112,14 @@ export async function getAllUsers(): Promise<User[]> {
   try {
     const usersRef = collection(db, "users")
     const snapshot = await getDocs(usersRef)
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate().toISOString(),
-    })) as User[]
+    return snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+      } as User
+    })
   } catch (error) {
     console.error("Error fetching users:", error)
     return []
@@ -123,11 +133,14 @@ export async function getAllListings(): Promise<Car[]> {
   try {
     const listingsRef = collection(db, "cars")
     const snapshot = await getDocs(listingsRef)
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate().toISOString(),
-    })) as Car[]
+    return snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+      } as Car
+    })
   } catch (error) {
     console.error("Error fetching listings:", error)
     return []
@@ -153,9 +166,14 @@ export async function deleteListing(listingId: string): Promise<void> {
   try {
     // Delete images from S3
     const car = await getCarById(listingId)
-    if (car) {
+    if (car && !isPreviewEnvironment()) {
       for (const imageUrl of car.images) {
-        await deleteFileFromS3(imageUrl)
+        try {
+          await deleteFileFromS3(imageUrl)
+        } catch (imageError) {
+          console.error(`Failed to delete image ${imageUrl}:`, imageError)
+          // Continue with other images even if one fails
+        }
       }
     }
 
@@ -193,41 +211,64 @@ export async function getFilteredCars(searchParams: {
   query?: string
 }): Promise<Car[]> {
   try {
+    console.log("Getting filtered cars with params:", searchParams)
     const carsRef = collection(db, "cars")
-    let q = query(carsRef, where("isVisible", "==", true), orderBy("createdAt", "desc"))
 
+    // Start with a basic query
+    let q = query(carsRef, orderBy("createdAt", "desc"))
+
+    // Add filters one by one
     if (searchParams.brand && searchParams.brand !== "any") {
       q = query(q, where("brand", "==", searchParams.brand))
     }
+
     if (searchParams.fuel && searchParams.fuel !== "any") {
       q = query(q, where("fuel", "==", searchParams.fuel))
     }
+
     if (searchParams.condition && searchParams.condition !== "any") {
       q = query(q, where("condition", "==", searchParams.condition))
     }
+
     if (searchParams.minYear) {
       q = query(q, where("year", ">=", Number.parseInt(searchParams.minYear)))
     }
-    if (searchParams.query) {
-      // Simple search implementation, consider using a more robust solution for production
-      q = query(q, where("model", ">=", searchParams.query), where("model", "<=", searchParams.query + "\uf8ff"))
-    }
 
+    // Execute the query
+    console.log("Executing filtered query...")
     const snapshot = await getDocs(q)
-    return snapshot.docs.map((doc) => {
+    console.log(`Query returned ${snapshot.docs.length} cars`)
+
+    // Process the results
+    let results = snapshot.docs.map((doc) => {
       const data = doc.data()
-
-      // Convert Firestore Timestamp to string if it exists
-      if (data.createdAt && typeof data.createdAt !== "string") {
-        const timestamp = data.createdAt as Timestamp
-        data.createdAt = timestamp.toDate().toISOString()
-      }
-
       return {
         id: doc.id,
         ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
       } as Car
     })
+
+    // Apply client-side filtering for price range and query
+    if (searchParams.minPrice) {
+      results = results.filter((car) => car.price >= Number.parseInt(searchParams.minPrice!))
+    }
+
+    if (searchParams.maxPrice) {
+      results = results.filter((car) => car.price <= Number.parseInt(searchParams.maxPrice!))
+    }
+
+    if (searchParams.query) {
+      const query = searchParams.query.toLowerCase()
+      results = results.filter(
+        (car) =>
+          car.brand.toLowerCase().includes(query) ||
+          car.model.toLowerCase().includes(query) ||
+          car.description?.toLowerCase().includes(query),
+      )
+    }
+
+    return results
   } catch (error) {
     console.error("Error fetching filtered cars:", error)
     return []
@@ -239,22 +280,26 @@ export async function getFilteredCars(searchParams: {
  */
 export async function getCarById(carId: string): Promise<Car | null> {
   try {
+    console.log(`Fetching car with ID: ${carId}`)
     const carDoc = await getDoc(doc(db, "cars", carId))
 
     if (carDoc.exists()) {
       const carData = carDoc.data()
+      console.log(`Car found: ${carData.brand} ${carData.model}`)
 
-      // Convert Firestore Timestamp to string if it exists
-      if (carData.createdAt && typeof carData.createdAt !== "string") {
-        const timestamp = carData.createdAt as Timestamp
-        carData.createdAt = timestamp.toDate().toISOString()
+      // Ensure images array exists
+      if (!carData.images) {
+        console.log("No images found for car, setting empty array")
+        carData.images = []
       }
 
       return {
         id: carDoc.id,
         ...carData,
+        createdAt: carData.createdAt?.toDate?.() ? carData.createdAt.toDate().toISOString() : carData.createdAt,
       } as Car
     } else {
+      console.log(`No car found with ID: ${carId}`)
       return null
     }
   } catch (error) {
@@ -275,8 +320,15 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
     let imageUrls: string[] = []
 
     try {
-      imageUrls = await uploadFilesToS3(images)
-      console.log("Images uploaded successfully:", imageUrls)
+      if (isPreviewEnvironment()) {
+        // In preview environment, use placeholder images
+        imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+        console.log("Using placeholder images in preview environment:", imageUrls)
+      } else {
+        // In production, upload to S3
+        imageUrls = await uploadFilesToS3(images)
+        console.log("Images uploaded successfully to S3:", imageUrls)
+      }
     } catch (uploadError) {
       console.error("Error uploading images:", uploadError)
       // Fallback to placeholder images if upload fails
@@ -291,7 +343,7 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
     const completeCarData = {
       ...carData,
       images: imageUrls,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
       isVisible: true,
       // Add default values for any potentially missing fields
       year: carData.year || new Date().getFullYear(),
@@ -310,50 +362,129 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
   }
 }
 
-// Add this function to check if cars exist without filters
-export async function checkCarsExist(): Promise<boolean> {
+/**
+ * Update a car listing
+ */
+export async function updateCarListing(carId: string, carData: Partial<Car>, newImages?: File[]): Promise<void> {
   try {
-    const carsRef = collection(db, "cars")
-    const snapshot = await getDocs(carsRef)
-    console.log(`Found ${snapshot.docs.length} total car documents in Firebase`)
+    console.log(`Updating car listing with ID: ${carId}`)
 
-    // Log the first few documents to inspect
-    snapshot.docs.slice(0, 3).forEach((doc) => {
-      console.log(`Car document ${doc.id}:`, doc.data())
-    })
+    // Get the existing car data
+    const existingCar = await getCarById(carId)
+    if (!existingCar) {
+      throw new Error(`Car with ID ${carId} not found`)
+    }
 
-    return snapshot.docs.length > 0
+    let imageUrls = existingCar.images || []
+
+    // Handle new images if provided
+    if (newImages && newImages.length > 0) {
+      console.log(`Uploading ${newImages.length} new images...`)
+
+      try {
+        if (isPreviewEnvironment()) {
+          // In preview environment, use placeholder images
+          const newPlaceholders = newImages.map(
+            (_, index) => `/placeholder.svg?height=600&width=800&query=new car ${index + 1}`,
+          )
+          imageUrls = [...imageUrls, ...newPlaceholders]
+          console.log("Added placeholder images in preview environment")
+        } else {
+          // In production, upload to S3
+          const newImageUrls = await uploadFilesToS3(newImages)
+          imageUrls = [...imageUrls, ...newImageUrls]
+          console.log("New images uploaded successfully to S3")
+        }
+      } catch (uploadError) {
+        console.error("Error uploading new images:", uploadError)
+        // Fallback to placeholder images if upload fails
+        const fallbackImages = newImages.map(
+          (_, index) => `/placeholder.svg?height=600&width=800&query=new car ${index + 1}`,
+        )
+        imageUrls = [...imageUrls, ...fallbackImages]
+        console.log("Using placeholder images for new uploads")
+      }
+    }
+
+    // Update the car document in Firestore
+    const updateData = {
+      ...carData,
+      images: imageUrls,
+      updatedAt: new Date(),
+    }
+
+    console.log("Updating Firestore document with data:", updateData)
+    await updateDoc(doc(db, "cars", carId), updateData)
+    console.log("Car listing updated successfully")
   } catch (error) {
-    console.error("Error checking if cars exist:", error)
-    return false
+    console.error("Error updating car listing:", error)
+    throw error
   }
 }
 
-// Add this function to get car listings without the isVisible filter
+/**
+ * Get car listings with pagination
+ */
+export async function getCarListings(limitCount = 20, startAfterDoc?: any): Promise<{ cars: Car[]; lastDoc: any }> {
+  try {
+    console.log(`Getting car listings with limit: ${limitCount}`)
+    const carsRef = collection(db, "cars")
+
+    let q
+    if (startAfterDoc) {
+      q = query(carsRef, orderBy("createdAt", "desc"), firestoreLimit(limitCount), startAfterDoc)
+    } else {
+      q = query(carsRef, orderBy("createdAt", "desc"), firestoreLimit(limitCount))
+    }
+
+    console.log("Executing query...")
+    const snapshot = await getDocs(q)
+    console.log(`Query returned ${snapshot.docs.length} cars`)
+
+    const lastVisible = snapshot.docs[snapshot.docs.length - 1]
+
+    const cars = snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+      } as Car
+    })
+
+    return {
+      cars,
+      lastDoc: lastVisible,
+    }
+  } catch (error) {
+    console.error("Error fetching car listings:", error)
+    return { cars: [], lastDoc: null }
+  }
+}
+
+/**
+ * Get all car listings (for homepage, admin, etc.)
+ */
 export async function getAllCarListings(limit?: number): Promise<Car[]> {
   try {
     console.log(`Getting ALL car listings${limit ? ` with limit: ${limit}` : ""}`)
     const carsRef = collection(db, "cars")
 
-    // Query without the isVisible filter
-    const q = limit ? query(carsRef, orderBy("createdAt", "desc"), limit) : query(carsRef, orderBy("createdAt", "desc"))
+    // Query with optional limit
+    const q = limit
+      ? query(carsRef, orderBy("createdAt", "desc"), firestoreLimit(limit))
+      : query(carsRef, orderBy("createdAt", "desc"))
 
-    console.log("Executing query without isVisible filter...")
+    console.log("Executing query...")
     const snapshot = await getDocs(q)
     console.log(`Query returned ${snapshot.docs.length} cars`)
 
     return snapshot.docs.map((doc) => {
       const data = doc.data()
-
-      // Convert Firestore Timestamp to string if it exists
-      if (data.createdAt && typeof data.createdAt !== "string") {
-        const timestamp = data.createdAt
-        data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
-      }
-
       return {
         id: doc.id,
         ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
       } as Car
     })
   } catch (error) {
@@ -362,63 +493,28 @@ export async function getAllCarListings(limit?: number): Promise<Car[]> {
   }
 }
 
-// Modify the getCarListings function to handle the case where isVisible might not exist
-export async function getCarListings(limit: number): Promise<Car[]> {
+/**
+ * Get user's car listings
+ */
+export async function getUserListings(userId: string): Promise<Car[]> {
   try {
-    console.log(`Getting car listings with limit: ${limit}`)
+    console.log(`Getting listings for user: ${userId}`)
     const carsRef = collection(db, "cars")
+    const q = query(carsRef, where("userId", "==", userId), orderBy("createdAt", "desc"))
 
-    // First check if any cars exist at all
-    const allCarsSnapshot = await getDocs(carsRef)
-    console.log(`Total cars in database: ${allCarsSnapshot.docs.length}`)
-
-    // If no cars have isVisible field, return all cars
-    const hasVisibleField = allCarsSnapshot.docs.some((doc) => "isVisible" in doc.data())
-
-    if (!hasVisibleField && allCarsSnapshot.docs.length > 0) {
-      console.log("No cars have isVisible field, returning all cars")
-      const q = query(carsRef, orderBy("createdAt", "desc"), limit ? limit : 20)
-      const snapshot = await getDocs(q)
-
-      return snapshot.docs.map((doc) => {
-        const data = doc.data()
-
-        // Convert Firestore Timestamp to string if it exists
-        if (data.createdAt && typeof data.createdAt !== "string") {
-          const timestamp = data.createdAt
-          data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
-        }
-
-        return {
-          id: doc.id,
-          ...data,
-          isVisible: true, // Add isVisible field if it doesn't exist
-        } as Car
-      })
-    }
-
-    // Otherwise use the original query with isVisible filter
-    const q = query(carsRef, where("isVisible", "==", true), orderBy("createdAt", "desc"), limit ? limit : 20)
-    console.log("Executing filtered query...")
     const snapshot = await getDocs(q)
-    console.log(`Filtered query returned ${snapshot.docs.length} cars`)
+    console.log(`Found ${snapshot.docs.length} listings for user`)
 
     return snapshot.docs.map((doc) => {
       const data = doc.data()
-
-      // Convert Firestore Timestamp to string if it exists
-      if (data.createdAt && typeof data.createdAt !== "string") {
-        const timestamp = data.createdAt
-        data.createdAt = timestamp.toDate?.() ? timestamp.toDate().toISOString() : new Date().toISOString()
-      }
-
       return {
         id: doc.id,
         ...data,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
       } as Car
     })
   } catch (error) {
-    console.error("Error fetching car listings:", error)
+    console.error(`Error fetching listings for user ${userId}:`, error)
     return []
   }
 }

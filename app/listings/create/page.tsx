@@ -1,10 +1,10 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Upload } from "lucide-react"
+import { Upload, X, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -36,7 +36,9 @@ export default function CreateListingPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [images, setImages] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,12 +56,28 @@ export default function CreateListingPage() {
     },
   })
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
       const fileArray = Array.from(e.target.files)
-      setImages(fileArray)
+
+      // Limit to 5 images
+      const selectedFiles = fileArray.slice(0, 5)
+      setImages(selectedFiles)
+
+      // Create preview URLs
+      const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file))
+      setImagePreviews(previewUrls)
     }
-  }
+  }, [])
+
+  const removeImage = useCallback((index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index))
+    setImagePreviews((prev) => {
+      // Revoke the URL to prevent memory leaks
+      URL.revokeObjectURL(prev[index])
+      return prev.filter((_, i) => i !== index)
+    })
+  }, [])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log("Form submitted with values:", values)
@@ -84,8 +102,20 @@ export default function CreateListingPage() {
     }
 
     setIsSubmitting(true)
+    setUploadProgress(10) // Start progress
 
     try {
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 500)
+
       // Create car listing with images
       const carData = {
         brand: values.brand,
@@ -108,6 +138,9 @@ export default function CreateListingPage() {
       const listingId = await createCarListing(carData, images)
       console.log("Listing created with ID:", listingId)
 
+      clearInterval(progressInterval)
+      setUploadProgress(100) // Complete progress
+
       toast({
         title: "Listing created",
         description: "Your car listing has been created successfully",
@@ -126,6 +159,13 @@ export default function CreateListingPage() {
       setIsSubmitting(false)
     }
   }
+
+  // Clean up preview URLs when component unmounts
+  React.useEffect(() => {
+    return () => {
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [imagePreviews])
 
   if (!user) {
     return (
@@ -335,15 +375,42 @@ export default function CreateListingPage() {
 
             <div>
               <FormLabel>Images</FormLabel>
+
+              {/* Image previews */}
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 mb-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
+                      <img
+                        src={preview || "/placeholder.svg"}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
                 <div className="text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-300" />
+                  {imagePreviews.length === 0 ? (
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
+                  ) : (
+                    <Upload className="mx-auto h-12 w-12 text-gray-300" />
+                  )}
                   <div className="mt-4 flex text-sm leading-6 text-gray-600">
                     <label
                       htmlFor="file-upload"
                       className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary"
                     >
-                      <span>Upload images</span>
+                      <span>{imagePreviews.length === 0 ? "Upload images" : "Change images"}</span>
                       <input
                         id="file-upload"
                         name="file-upload"
@@ -357,20 +424,18 @@ export default function CreateListingPage() {
                     <p className="pl-1">or drag and drop</p>
                   </div>
                   <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB each (max 5 images)</p>
-                  {images.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-500">{images.length} images selected</p>
-                      <ul className="mt-2 text-xs text-gray-500">
-                        {images.slice(0, 5).map((file, index) => (
-                          <li key={index}>{file.name}</li>
-                        ))}
-                        {images.length > 5 && <li>...and {images.length - 5} more</li>}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
+
+            {isSubmitting && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating Listing..." : "Create Listing"}

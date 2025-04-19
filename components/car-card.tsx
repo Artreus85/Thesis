@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Calendar, Fuel, Gauge, Heart } from "lucide-react"
@@ -5,20 +7,31 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Car } from "@/lib/types"
+import { useState } from "react"
 
 interface CarCardProps {
   car: Car
 }
 
 export function CarCard({ car }: CarCardProps) {
+  const [imageError, setImageError] = useState(false)
+
+  // Default image if none provided or if there's an error
+  const defaultImage = `/placeholder.svg?height=200&width=300&query=${car.brand} ${car.model}`
+
+  // Get the first image or use default
+  const imageUrl = car.images && car.images.length > 0 && !imageError ? car.images[0] : defaultImage
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video overflow-hidden">
         <Image
-          src={car.images && car.images.length > 0 ? car.images[0] : "/placeholder.svg?height=200&width=300&query=car"}
+          src={imageUrl || "/placeholder.svg"}
           alt={`${car.brand} ${car.model}`}
           fill
           className="object-cover transition-transform hover:scale-105"
+          onError={() => setImageError(true)}
+          unoptimized // Use this for external URLs
         />
         <Button
           variant="ghost"
@@ -36,20 +49,20 @@ export function CarCard({ car }: CarCardProps) {
             <h3 className="font-semibold">
               {car.brand} {car.model}
             </h3>
-            <span className="font-bold text-lg">${car.price.toLocaleString()}</span>
+            <span className="font-bold text-lg">${car.price?.toLocaleString() || "N/A"}</span>
           </div>
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Calendar className="mr-1 h-4 w-4" />
-              <span>{car.year}</span>
+              <span>{car.year || "N/A"}</span>
             </div>
             <div className="flex items-center">
               <Gauge className="mr-1 h-4 w-4" />
-              <span>{car.mileage.toLocaleString()} mi</span>
+              <span>{car.mileage?.toLocaleString() || "N/A"} mi</span>
             </div>
             <div className="flex items-center">
               <Fuel className="mr-1 h-4 w-4" />
-              <span>{car.fuel}</span>
+              <span>{car.fuel || "N/A"}</span>
             </div>
           </div>
         </div>

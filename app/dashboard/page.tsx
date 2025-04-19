@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Car, Heart, Plus, Trash, User } from "lucide-react"
+import Image from "next/image"
+import { Car, Heart, Plus, Trash, User, Edit, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
-import { getAllListings, deleteListing } from "@/lib/firebase"
+import { getUserListings, deleteListing } from "@/lib/firebase"
+import { getDefaultCarImage } from "@/lib/image-utils"
 import type { Car as CarType } from "@/lib/types"
 
 export default function Dashboard() {
@@ -40,11 +42,7 @@ export default function Dashboard() {
         try {
           console.log("Fetching listings for dashboard...")
           setIsLoading(true)
-          const listingsData = await getAllListings()
-          console.log(`Fetched ${listingsData.length} total listings`)
-
-          // Filter listings to only show the current user's listings
-          const userListings = listingsData.filter((listing) => listing.userId === user.id)
+          const userListings = await getUserListings(user.id)
           console.log(`Found ${userListings.length} listings for current user`)
           setListings(userListings)
         } catch (error) {
@@ -168,10 +166,12 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-video relative rounded-md overflow-hidden mb-2">
-                      <img
-                        src={listing.images?.[0] || "/placeholder.svg?height=200&width=300&query=car"}
+                      <Image
+                        src={listing.images?.[0] || getDefaultCarImage(listing)}
                         alt={`${listing.brand} ${listing.model}`}
-                        className="object-cover w-full h-full"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -182,13 +182,20 @@ export default function Dashboard() {
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <Link href={`/cars/${listing.id}`}>
-                      <Button variant="outline">View</Button>
+                      <Button variant="outline" size="sm">
+                        <Eye className="mr-1 h-4 w-4" />
+                        View
+                      </Button>
                     </Link>
                     <Link href={`/listings/edit/${listing.id}`}>
-                      <Button variant="outline">Edit</Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="mr-1 h-4 w-4" />
+                        Edit
+                      </Button>
                     </Link>
-                    <Button variant="outline" onClick={() => handleDeleteListing(listing.id)}>
-                      <Trash className="h-4 w-4" />
+                    <Button variant="outline" size="sm" onClick={() => handleDeleteListing(listing.id)}>
+                      <Trash className="mr-1 h-4 w-4" />
+                      Delete
                     </Button>
                   </CardFooter>
                 </Card>

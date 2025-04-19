@@ -35,29 +35,37 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
     notFound()
   }
 
+  // Ensure car has images array
+  const images = car.images || []
+
+  // Default image if none provided
+  const defaultImage = `/placeholder.svg?height=400&width=600&query=${car.brand} ${car.model}`
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="relative aspect-video overflow-hidden rounded-lg mb-4">
             <Image
-              src={car.images[0] || "/placeholder.svg?height=400&width=600&query=car"}
+              src={images[0] || defaultImage}
               alt={`${car.brand} ${car.model}`}
               fill
               className="object-cover"
               priority
+              unoptimized // Use this for external URLs
             />
             <Badge className="absolute left-4 top-4 text-sm">{car.condition}</Badge>
           </div>
 
           <div className="grid grid-cols-4 gap-2 mb-6">
-            {car.images.slice(1, 5).map((image, index) => (
+            {images.slice(1, 5).map((image, index) => (
               <div key={index} className="relative aspect-video overflow-hidden rounded-lg">
                 <Image
-                  src={image || `/placeholder.svg?height=100&width=150&query=car ${index + 1}`}
+                  src={image || `/placeholder.svg?height=100&width=150&query=${car.brand} ${car.model} ${index + 1}`}
                   alt={`${car.brand} ${car.model} - Image ${index + 1}`}
                   fill
                   className="object-cover"
+                  unoptimized // Use this for external URLs
                 />
               </div>
             ))}
@@ -73,35 +81,35 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Brand</h3>
-                  <p>{car.brand}</p>
+                  <p>{car.brand || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Model</h3>
-                  <p>{car.model}</p>
+                  <p>{car.model || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Year</h3>
-                  <p>{car.year}</p>
+                  <p>{car.year || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Mileage</h3>
-                  <p>{car.mileage.toLocaleString()} mi</p>
+                  <p>{car.mileage?.toLocaleString() || "N/A"} mi</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Fuel Type</h3>
-                  <p>{car.fuel}</p>
+                  <p>{car.fuel || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Gearbox</h3>
-                  <p>{car.gearbox}</p>
+                  <p>{car.gearbox || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Power</h3>
-                  <p>{car.power} hp</p>
+                  <p>{car.power || "N/A"} hp</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Condition</h3>
-                  <p>{car.condition}</p>
+                  <p>{car.condition || "N/A"}</p>
                 </div>
               </div>
             </TabsContent>
@@ -110,12 +118,12 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
                 <div>
                   <h3 className="font-medium">Engine</h3>
                   <p className="text-muted-foreground">
-                    {car.power}hp {car.fuel}
+                    {car.power || "N/A"}hp {car.fuel || "N/A"}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium">Transmission</h3>
-                  <p className="text-muted-foreground">{car.gearbox}</p>
+                  <p className="text-muted-foreground">{car.gearbox || "N/A"}</p>
                 </div>
                 <div>
                   <h3 className="font-medium">Performance</h3>
@@ -128,7 +136,7 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
               </div>
             </TabsContent>
             <TabsContent value="description" className="p-4 border rounded-lg mt-2">
-              <p className="whitespace-pre-line">{car.description}</p>
+              <p className="whitespace-pre-line">{car.description || "No description available"}</p>
             </TabsContent>
           </Tabs>
         </div>
@@ -142,18 +150,18 @@ export default async function CarDetailPage({ params }: CarDetailPageProps) {
                 </h1>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{car.year}</span>
+                  <span>{car.year || "N/A"}</span>
                   <Separator orientation="vertical" className="h-4" />
                   <Gauge className="h-4 w-4" />
-                  <span>{car.mileage.toLocaleString()} mi</span>
+                  <span>{car.mileage?.toLocaleString() || "N/A"} mi</span>
                   <Separator orientation="vertical" className="h-4" />
                   <Fuel className="h-4 w-4" />
-                  <span>{car.fuel}</span>
+                  <span>{car.fuel || "N/A"}</span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <div className="text-3xl font-bold">${car.price.toLocaleString()}</div>
+                <div className="text-3xl font-bold">${car.price?.toLocaleString() || "N/A"}</div>
               </div>
 
               <div className="space-y-3">
