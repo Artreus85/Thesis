@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { onAuthStateChanged, getAuth } from "firebase/auth"
+import { onAuthStateChanged, getAuth, signOut } from "firebase/auth"
 import { getFirestore, doc, getDoc } from "firebase/firestore"
 import { signIn as firebaseSignIn, signOut as firebaseSignOut, signUp as firebaseSignUp } from "@/lib/firebase"
 import type { User } from "@/lib/types"
@@ -34,6 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log("Setting up auth state listener")
+
+    // Force sign out when the component mounts
+    signOut(auth).catch((error) => {
+      console.error("Error signing out on initial load:", error)
+    })
 
     // This ensures Firebase has time to initialize
     const timeoutId = setTimeout(() => {

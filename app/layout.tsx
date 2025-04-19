@@ -6,6 +6,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
+import { clearAuthTokens } from "@/lib/auth-utils"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -13,6 +14,11 @@ export const metadata: Metadata = {
   title: "CarMarket - Find Your Perfect Car",
   description: "Browse and sell cars on our trusted marketplace",
   generator: "v0.dev",
+}
+
+// Clear auth tokens on the client side
+if (typeof window !== "undefined") {
+  clearAuthTokens()
 }
 
 export default function RootLayout({
