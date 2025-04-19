@@ -99,15 +99,19 @@ export default function CreateListingPage() {
         images: [], // This will be populated by the createCarListing function
         userId: user.id,
         createdAt: new Date().toISOString(),
+        isVisible: true, // Make sure listings are visible by default
       }
 
+      console.log("Creating car listing with data:", carData)
       const listingId = await createCarListing(carData, images)
+      console.log("Listing created with ID:", listingId)
 
       toast({
         title: "Listing created",
         description: "Your car listing has been created successfully",
       })
 
+      // Navigate to the new listing
       router.push(`/cars/${listingId}`)
     } catch (error) {
       console.error("Error creating listing:", error)

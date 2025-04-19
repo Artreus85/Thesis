@@ -267,10 +267,15 @@ export async function getCarById(carId: string): Promise<Car | null> {
  */
 export async function createCarListing(carData: Omit<Car, "id">, images: File[]): Promise<string> {
   try {
+    console.log("Starting car listing creation process")
+
     // Upload images to S3
+    console.log(`Uploading ${images.length} images...`)
     const imageUrls = await uploadFilesToS3(images)
+    console.log("Images uploaded successfully:", imageUrls)
 
     // Create car document in Firestore
+    console.log("Creating Firestore document with data:", { ...carData, images: imageUrls })
     const docRef = await addDoc(collection(db, "cars"), {
       ...carData,
       images: imageUrls,
@@ -278,6 +283,7 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
       isVisible: true,
     })
 
+    console.log("Car listing created with ID:", docRef.id)
     return docRef.id
   } catch (error) {
     console.error("Error creating car listing:", error)
