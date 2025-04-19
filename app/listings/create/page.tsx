@@ -135,6 +135,12 @@ export default function CreateListingPage() {
       }
 
       console.log("Creating car listing with data:", carData)
+
+      // Ensure user ID is valid
+      if (!user.id) {
+        throw new Error("User ID is missing. Please log in again.")
+      }
+
       const listingId = await createCarListing(carData, images)
       console.log("Listing created with ID:", listingId)
 
@@ -150,9 +156,25 @@ export default function CreateListingPage() {
       router.push(`/cars/${listingId}`)
     } catch (error) {
       console.error("Error creating listing:", error)
+
+      // Provide more specific error messages based on the error
+      let errorMessage = "There was an error creating your listing. Please try again."
+
+      if (error instanceof Error) {
+        if (error.message.includes("User ID")) {
+          errorMessage = "Authentication error. Please log out and log in again."
+        } else if (error.message.includes("storage") || error.message.includes("upload")) {
+          errorMessage = "Failed to upload images. Please try again with smaller images or fewer images."
+        } else if (error.message.includes("permission") || error.message.includes("unauthorized")) {
+          errorMessage = "You don't have permission to create listings. Please contact support."
+        }
+
+        console.error("Detailed error:", error.message)
+      }
+
       toast({
         title: "Error",
-        description: "There was an error creating your listing. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

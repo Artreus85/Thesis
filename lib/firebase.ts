@@ -339,7 +339,7 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
     // Create car document in Firestore
     console.log("Creating Firestore document with data:", { ...carData, images: imageUrls })
 
-    // Ensure all required fields are present
+    // Ensure all required fields are present and properly formatted
     const completeCarData = {
       ...carData,
       images: imageUrls,
@@ -350,8 +350,18 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
       mileage: carData.mileage || 0,
       power: carData.power || 0,
       price: carData.price || 0,
+      // Ensure userId is a string
+      userId: carData.userId ? String(carData.userId) : "",
     }
 
+    // Check if userId is valid
+    if (!completeCarData.userId) {
+      throw new Error("User ID is required to create a listing")
+    }
+
+    console.log("Final car data being sent to Firestore:", completeCarData)
+
+    // Create the document in Firestore
     const docRef = await addDoc(collection(db, "cars"), completeCarData)
 
     console.log("Car listing created with ID:", docRef.id)

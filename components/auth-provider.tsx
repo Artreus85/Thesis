@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.log("User data retrieved from Firestore")
               const userData = userDocSnap.data()
               setUser({
-                id: firebaseUser.uid,
+                id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
                 ...userData,
                 createdAt: userData.createdAt || new Date().toISOString(),
               })
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.log("No user data found in Firestore, using Firebase user data")
               // Fallback to basic user data from Firebase Auth
               setUser({
-                id: firebaseUser.uid,
+                id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
                 name: firebaseUser.displayName || "User",
                 email: firebaseUser.email || "",
                 role: "regular",
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error("Error fetching user data:", error)
             // Still set basic user data to prevent blocking the UI
             setUser({
-              id: firebaseUser.uid,
+              id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
               name: firebaseUser.displayName || "User",
               email: firebaseUser.email || "",
               role: "regular",

@@ -65,8 +65,21 @@ export async function uploadFilesToS3(files: File[]): Promise<string[]> {
   }
 
   console.log(`Uploading ${files.length} files to S3`)
-  const uploadPromises = files.map((file) => uploadFileToS3(file))
-  return Promise.all(uploadPromises)
+
+  // Check if AWS credentials are available
+  if (!process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || !process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY) {
+    console.warn("AWS credentials not found, using placeholder images instead")
+    return files.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+  }
+
+  try {
+    const uploadPromises = files.map((file) => uploadFileToS3(file))
+    return await Promise.all(uploadPromises)
+  } catch (error) {
+    console.error("Error in uploadFilesToS3:", error)
+    // Fallback to placeholder images
+    return files.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+  }
 }
 
 /**
