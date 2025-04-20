@@ -45,6 +45,12 @@ export default function Dashboard() {
         try {
           console.log("Fetching listings for dashboard...")
           setIsLoading(true)
+
+          // Make sure we have a valid user ID
+          if (!user.id || user.id.trim() === "") {
+            throw new Error("Invalid user ID")
+          }
+
           const userListings = await getUserListings(user.id)
           console.log(`Found ${userListings.length} listings for current user`)
           setListings(userListings)

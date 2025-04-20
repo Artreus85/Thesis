@@ -13,6 +13,7 @@ import {
   deleteDoc,
   setDoc,
   limit as firestoreLimit,
+  increment,
 } from "firebase/firestore"
 import {
   getAuth,
@@ -316,6 +317,11 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
   try {
     console.log("Starting car listing creation process")
 
+    // Validate user ID first
+    if (!carData.userId || carData.userId.trim() === "") {
+      throw new Error("User ID is required to create a listing")
+    }
+
     // Check if we already have image URLs in the carData
     let imageUrls: string[] = carData.images || []
 
@@ -355,13 +361,26 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
       mileage: carData.mileage || 0,
       power: carData.power || 0,
       price: carData.price || 0,
-      // Ensure userId is a string
-      userId: carData.userId ? String(carData.userId) : "",
+      // Ensure userId is a string and properly set
+      userId: String(carData.userId).trim(),
     }
 
-    // Check if userId is valid
+    // Double-check userId is valid
     if (!completeCarData.userId) {
       throw new Error("User ID is required to create a listing")
+    }
+
+    // Verify the user exists before creating the listing
+    try {
+      const userDoc = await getDoc(doc(db, "users", completeCarData.userId))
+      if (!userDoc.exists()) {
+        console.warn(`User with ID ${completeCarData.userId} does not exist, but proceeding with listing creation`)
+      } else {
+        console.log(`Verified user ${completeCarData.userId} exists`)
+      }
+    } catch (userError) {
+      console.error("Error verifying user:", userError)
+      // Continue anyway, as this is just a verification step
     }
 
     console.log("Final car data being sent to Firestore:", completeCarData)
@@ -370,6 +389,20 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
     const docRef = await addDoc(collection(db, "cars"), completeCarData)
 
     console.log("Car listing created with ID:", docRef.id)
+
+    // Update user's listings count (optional)
+    try {
+      const userRef = doc(db, "users", completeCarData.userId)
+      await updateDoc(userRef, {
+        listingsCount: increment(1),
+        lastListingAt: new Date(),
+      })
+      console.log(`Updated user ${completeCarData.userId} listings count`)
+    } catch (updateError) {
+      console.error("Error updating user listings count:", updateError)
+      // Continue anyway, as this is just an optional update
+    }
+
     return docRef.id
   } catch (error) {
     console.error("Error creating car listing:", error)
@@ -513,6 +546,11 @@ export async function getAllCarListings(limit?: number): Promise<Car[]> {
  */
 export async function getUserListings(userId: string): Promise<Car[]> {
   try {
+    if (!userId || userId.trim() === "") {
+      console.error("Invalid userId provided to getUserListings")
+      return []
+    }
+
     console.log(`Getting listings for user: ${userId}`)
     const carsRef = collection(db, "cars")
 
@@ -576,5 +614,24 @@ export async function getUserListings(userId: string): Promise<Car[]> {
   } catch (error) {
     console.error(`Error fetching listings for user ${userId}:`, error)
     throw error // Rethrow to be handled by the error handler
+  }
+}
+
+/**
+ * Check if a user owns a car listing
+ */
+export async function userOwnsCar(userId: string, carId: string): Promise<boolean> {
+  try {
+    if (!userId || !carId) return false
+
+    const carDoc = await getDoc(doc(db, "cars", carId))
+
+    if (!carDoc.exists()) return false
+
+    const carData = carDoc.data()
+    return carData.userId === userId
+  } catch (error) {
+    console.error("Error checking if user owns car:", error)
+    return false
   }
 }
