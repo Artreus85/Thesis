@@ -28,17 +28,16 @@ export function Header() {
       href: "/cars",
       label: "Каталог", // modified
       active: pathname === "/cars",
-    },
-    // Removed "About" and "Contact"
-  ]
+    },  
+  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-secondary"> {/* Changed to secondary color */}
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
-            <Car className="h-6 w-6" />
-            <span className="font-bold">CarMarket</span>
+            <Car className="h-6 w-6 text-primary" /> {/* Set icon color to primary */}
+            <span className="font-bold text-primary">CarMarket</span> {/* Set text to primary */}
           </Link>
           <nav className="hidden md:flex gap-6">
             {routes.map((route) => (
@@ -56,7 +55,6 @@ export function Header() {
         </div>
         <div className="flex items-center gap-2">
           {loading ? (
-            // Show a subtle loading state
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
           ) : user ? (
             <>
@@ -69,7 +67,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5 text-primary" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
