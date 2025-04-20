@@ -21,24 +21,15 @@ export function Header() {
   const routes = [
     {
       href: "/",
-      label: "Home",
+      label: "Начало", // modified
       active: pathname === "/",
     },
     {
       href: "/cars",
-      label: "Browse Cars",
+      label: "Каталог", // modified
       active: pathname === "/cars",
     },
-    {
-      href: "/about",
-      label: "About",
-      active: pathname === "/about",
-    },
-    {
-      href: "/contact",
-      label: "Contact",
-      active: pathname === "/contact",
-    },
+    // Removed "About" and "Contact"
   ]
 
   return (
