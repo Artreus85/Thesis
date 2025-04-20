@@ -38,12 +38,12 @@ export function SearchFilters() {
     <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Search</label>
+          <label className="text-sm font-medium">Търси</label>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search cars..."
+              placeholder="Намери кола..."
               className="pl-8"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -52,13 +52,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Brand</label>
+          <label className="text-sm font-medium">Марка</label>
           <Select value={brand} onValueChange={setBrand}>
             <SelectTrigger>
-              <SelectValue placeholder="Any brand" />
+              <SelectValue placeholder="Всяка марка" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any brand</SelectItem>
+              <SelectItem value="any">Всяка марка</SelectItem>
               {CAR_BRANDS.map((brand) => (
                 <SelectItem key={brand} value={brand}>
                   {brand}
@@ -69,13 +69,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Fuel Type</label>
+          <label className="text-sm font-medium">Вид гориво</label>
           <Select value={fuel} onValueChange={setFuel}>
             <SelectTrigger>
-              <SelectValue placeholder="Any fuel type" />
+              <SelectValue placeholder="Всеки вид гориво" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any fuel type</SelectItem>
+              <SelectItem value="any">Всеки вид гориво</SelectItem>
               {FUEL_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -86,13 +86,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Condition</label>
+          <label className="text-sm font-medium">Състояние</label>
           <Select value={condition} onValueChange={setCondition}>
             <SelectTrigger>
               <SelectValue placeholder="Any condition" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any condition</SelectItem>
+              <SelectItem value="any">Всякакво състояние</SelectItem>
               {CONDITIONS.map((condition) => (
                 <SelectItem key={condition} value={condition}>
                   {condition}
@@ -106,7 +106,7 @@ export function SearchFilters() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
         <div className="space-y-2">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Price Range</label>
+            <label className="text-sm font-medium">Ценови диапазон</label>
             <span className="text-sm text-muted-foreground">
               ${Number.parseInt(minPrice).toLocaleString()} - ${Number.parseInt(maxPrice).toLocaleString()}
             </span>
@@ -124,12 +124,12 @@ export function SearchFilters() {
 
         <div className="space-y-2">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Year (from)</label>
+            <label className="text-sm font-medium">Година на производство (след)</label>
             <span className="text-sm text-muted-foreground">{minYear}</span>
           </div>
           <Slider
             defaultValue={[Number.parseInt(minYear)]}
-            min={1990}
+            min={1970}
             max={new Date().getFullYear()}
             step={1}
             onValueChange={(values) => setMinYear(values[0].toString())}
@@ -138,7 +138,7 @@ export function SearchFilters() {
       </div>
 
       <Button onClick={handleSearch} className="w-full">
-        Search Cars
+        Намери кола
       </Button>
     </div>
   )

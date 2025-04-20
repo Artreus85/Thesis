@@ -63,9 +63,9 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />
           </div>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Вход</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to access your account
+            Въведете имейл и парола, за да влезете в профила си
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -75,12 +75,12 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Email
+                Имейл
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="email@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -92,11 +92,8 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Password
-                </label>
-                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
+                  Парола
+                </label>    
               </div>
               <Input
                 id="password"
@@ -112,9 +109,9 @@ export default function LoginPage() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              Нямате акаунт?{" "}
               <Link href="/auth/register" className="text-primary hover:underline">
-                Sign up
+                Регистрирайте се
               </Link>
             </div>
           </CardFooter>

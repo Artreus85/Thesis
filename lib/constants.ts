@@ -17,8 +17,8 @@ export const CAR_BRANDS = [
   "Volvo",
 ]
 
-export const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG", "CNG"]
+export const FUEL_TYPES = ["Бензин", "Дизел", "Хибрид", "Електрическа", "Газ"]
 
-export const GEARBOX_TYPES = ["Manual", "Automatic", "Semi-automatic", "CVT"]
+export const GEARBOX_TYPES = ["Ръчна", "Автоматична", "Полу-автоматична"]
 
-export const CONDITIONS = ["New", "Used", "Certified Pre-Owned"]
+export const CONDITIONS = ["Нова", "Употребена"]

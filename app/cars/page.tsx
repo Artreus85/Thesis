@@ -32,7 +32,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Browse Cars</h1>
+      <h1 className="text-3xl font-bold mb-6">Каталог</h1>
 
       <SearchFilters />
 
@@ -42,7 +42,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
             cars.map((car) => <CarCard key={car.id} car={car} />)
           ) : (
             <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium">No cars found</h3>
+              <h3 className="text-lg font-medium">Няма намерени коли</h3>
               <p className="text-muted-foreground">Try adjusting your filters</p>
             </div>
           )}
