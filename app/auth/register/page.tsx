@@ -69,8 +69,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="container flex h-screen items-center justify-center">
-      <Card className="mx-auto max-w-sm">
+    <div className="container mx-auto px-4 flex items-center justify-center min-h-[calc(100vh-8rem)]">
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />

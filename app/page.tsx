@@ -1,31 +1,37 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { CarCard } from "@/components/car-card"
 import { SearchFilters } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
 
-// Add dynamic export to ensure server-side rendering
-export const dynamic = "force-dynamic"
+export default function Home() {
+  const [cars, setCars] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-// Update the Home function to handle the new return type from getCarListings
+  useEffect(() => {
+    async function fetchCars() {
+      try {
+        // Dynamically import to prevent build errors
+        const { getCarListings } = await import("@/lib/firebase")
+        console.log("Fetching car listings for homepage...")
 
-export default async function Home() {
-  // Add error handling and fallback data
-  let cars: any[] = []
+        // Destructure the result to get just the cars array
+        const result = await getCarListings(8) // Limit to 8 featured listings
+        setCars(result.cars)
+        console.log(`Fetched ${result.cars.length} car listings for homepage`)
+      } catch (error) {
+        console.error("Error fetching car listings:", error)
+        // Provide fallback data if fetch fails
+        setCars([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  try {
-    // Dynamically import to prevent build errors
-    const { getCarListings } = await import("@/lib/firebase")
-    console.log("Fetching car listings for homepage...")
-
-    // Destructure the result to get just the cars array
-    const result = await getCarListings(8) // Limit to 8 featured listings
-    cars = result.cars
-    console.log(`Fetched ${cars.length} car listings for homepage`)
-  } catch (error) {
-    console.error("Error fetching car listings:", error)
-    // Provide fallback data if fetch fails
-    cars = []
-  }
+    fetchCars()
+  }, [])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -44,7 +50,7 @@ export default async function Home() {
               <Link href="/cars">
                 <Button size="lg">Browse Cars</Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/listings/create">
                 <Button variant="outline" size="lg">
                   Sell Your Car
                 </Button>
@@ -64,19 +70,27 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {cars.length > 0 ? (
-            cars.map((car) => <CarCard key={car.id} car={car} />)
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium">No listings available</h3>
-              <p className="text-muted-foreground">Be the first to add a car listing!</p>
-              <Link href="/listings/create" className="mt-4 inline-block">
-                <Button>Add Listing</Button>
-              </Link>
-            </div>
-          )}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="border rounded-lg p-4 h-64 animate-pulse bg-gray-100"></div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {cars.length > 0 ? (
+              cars.map((car) => <CarCard key={car.id} car={car} />)
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <h3 className="text-lg font-medium">No listings available</h3>
+                <p className="text-muted-foreground">Be the first to add a car listing!</p>
+                <Link href="/listings/create" className="mt-4 inline-block">
+                  <Button>Add Listing</Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   )

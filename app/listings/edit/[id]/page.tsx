@@ -1,23 +1,23 @@
 "use client"
 
-import React from "react"
-
-import { useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Upload, X, ImageIcon } from "lucide-react"
+import React, { useState, useEffect, useCallback } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Upload, X, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
-import { createCarListing } from "@/lib/firebase"
+import { getCarById, updateCarListing } from "@/lib/firebase"
 import { uploadFilesToS3 } from "@/lib/s3"
 import { CAR_BRANDS, FUEL_TYPES, GEARBOX_TYPES, CONDITIONS, BODY_TYPES, DRIVE_TYPES, COLORS } from "@/lib/constants"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import Image from "next/image"
 
 const formSchema = z.object({
   brand: z.string().min(1, "Brand is required"),
@@ -41,21 +41,28 @@ const formSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
 })
 
-export default function CreateListingPage() {
+export default function EditListingPage() {
+  const params = useParams()
+  const carId = params.id as string
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const [images, setImages] = useState<File[]>([])
+  const [existingImages, setExistingImages] = useState<string[]>([])
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [car, setCar] = useState<any>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       brand: "",
       model: "",
-      year: new Date().getFullYear().toString(),
+      year: "",
       mileage: "",
       fuel: "",
       gearbox: "",
@@ -65,8 +72,8 @@ export default function CreateListingPage() {
       bodyType: "",
       driveType: "",
       color: "",
-      doors: "4",
-      seats: "5",
+      doors: "",
+      seats: "",
       engineSize: "",
       vin: "",
       licensePlate: "",
@@ -75,11 +82,103 @@ export default function CreateListingPage() {
     },
   })
 
+  // Fetch car data
+  useEffect(() => {
+    async function fetchCar() {
+      try {
+        setLoading(true)
+        const carData = await getCarById(carId)
+
+        if (!carData) {
+          setError("Car not found")
+          return
+        }
+
+        setCar(carData)
+
+        // Check if the current user is the owner or an admin
+        if (user && (user.id === carData.userId || user.role === "admin")) {
+          // Set existing images
+          setExistingImages(carData.images || [])
+
+          // Populate form
+          form.reset({
+            brand: carData.brand || "",
+            model: carData.model || "",
+            year: carData.year?.toString() || "",
+            mileage: carData.mileage?.toString() || "",
+            fuel: carData.fuel || "",
+            gearbox: carData.gearbox || "",
+            power: carData.power?.toString() || "",
+            price: carData.price?.toString() || "",
+            condition: carData.condition || "",
+            bodyType: carData.bodyType || "",
+            driveType: carData.driveType || "",
+            color: carData.color || "",
+            doors: carData.doors?.toString() || "",
+            seats: carData.seats?.toString() || "",
+            engineSize: carData.engineSize?.toString() || "",
+            vin: carData.vin || "",
+            licensePlate: carData.licensePlate || "",
+            features: carData.features || "",
+            description: carData.description || "",
+          })
+        } else {
+          // User is not authorized to edit this listing
+          setError("You don't have permission to edit this listing")
+
+          // After a short delay, redirect to the car detail page
+          setTimeout(() => {
+            router.push(`/cars/${carId}`)
+          }, 3000)
+        }
+      } catch (err) {
+        console.error("Error fetching car:", err)
+        setError("Failed to load car data")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Add a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.log("Edit page loading timeout reached - forcing loading state to false")
+        setLoading(false)
+        setError("Loading timed out. Please try refreshing the page.")
+      }
+    }, 10000) // 10 second timeout
+
+    if (carId) {
+      console.log("Edit page auth state:", { user, loading: loading })
+
+      if (!user && !loading) {
+        // If user is not logged in and auth loading is complete, redirect to login page
+        console.log("User not authenticated, redirecting to login")
+        setError("Please log in to edit listings")
+        setTimeout(() => {
+          router.push(`/auth/login?redirect=/listings/edit/${carId}`)
+        }, 2000)
+      } else if (user) {
+        // If user is logged in, fetch car data
+        console.log("User authenticated, fetching car data")
+        fetchCar()
+      } else {
+        // If auth is still loading, we'll wait for it to complete
+        console.log("Auth still loading, waiting...")
+      }
+    }
+
+    return () => {
+      clearTimeout(loadingTimeout)
+    }
+  }, [carId, user, loading, form, router])
+
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const fileArray = Array.from(e.target.files)
 
-      // Limit to 5 images
+      // Limit to 5 new images
       const selectedFiles = fileArray.slice(0, 5)
       setImages(selectedFiles)
 
@@ -98,20 +197,38 @@ export default function CreateListingPage() {
     })
   }, [])
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log("Form submitted with values:", values)
+  const removeExistingImage = useCallback(
+    (index: number) => {
+      const imageToRemove = existingImages[index]
+      setImagesToDelete((prev) => [...prev, imageToRemove])
+      setExistingImages((prev) => prev.filter((_, i) => i !== index))
+    },
+    [existingImages],
+  )
 
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
       toast({
         title: "Authentication required",
-        description: "Please log in to create a listing",
+        description: "Please log in to update a listing",
         variant: "destructive",
       })
       router.push("/auth/login")
       return
     }
 
-    if (images.length === 0) {
+    // Check if user is authorized to edit this listing
+    if (car && user.id !== car.userId && user.role !== "admin") {
+      toast({
+        title: "Not authorized",
+        description: "You don't have permission to edit this listing",
+        variant: "destructive",
+      })
+      router.push(`/cars/${carId}`)
+      return
+    }
+
+    if (existingImages.length === 0 && images.length === 0) {
       toast({
         title: "Images required",
         description: "Please upload at least one image of your car",
@@ -135,12 +252,16 @@ export default function CreateListingPage() {
         })
       }, 500)
 
-      // Step 1: Upload images to S3 first
-      console.log("Uploading images to S3...")
-      const imageUrls = await uploadFilesToS3(images)
-      console.log("Images uploaded successfully to S3:", imageUrls)
+      // Upload new images if any
+      let newImageUrls: string[] = []
+      if (images.length > 0) {
+        newImageUrls = await uploadFilesToS3(images)
+      }
 
-      // Step 2: Create car listing with the uploaded image URLs
+      // Combine existing images (that weren't deleted) with new ones
+      const finalImages = [...existingImages, ...newImageUrls]
+
+      // Update car data
       const carData = {
         brand: values.brand,
         model: values.model,
@@ -161,54 +282,28 @@ export default function CreateListingPage() {
         licensePlate: values.licensePlate,
         features: values.features,
         description: values.description,
-        images: imageUrls, // Use the uploaded image URLs
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        isVisible: true, // Make sure listings are visible by default
+        images: finalImages,
+        updatedAt: new Date().toISOString(),
       }
 
-      console.log("Creating car listing with data:", carData)
-
-      // Ensure user ID is valid
-      if (!user.id) {
-        throw new Error("User ID is missing. Please log in again.")
-      }
-
-      // Create the listing in Firestore
-      const listingId = await createCarListing(carData, []) // Pass empty array since we already uploaded images
-      console.log("Listing created with ID:", listingId)
+      // Update the listing
+      await updateCarListing(carId, carData)
 
       clearInterval(progressInterval)
       setUploadProgress(100) // Complete progress
 
       toast({
-        title: "Listing created",
-        description: "Your car listing has been created successfully",
+        title: "Listing updated",
+        description: "Your car listing has been updated successfully",
       })
 
-      // Navigate to the new listing
-      router.push(`/cars/${listingId}`)
+      // Navigate to the updated listing
+      router.push(`/cars/${carId}`)
     } catch (error) {
-      console.error("Error creating listing:", error)
-
-      // Provide more specific error messages based on the error
-      let errorMessage = "There was an error creating your listing. Please try again."
-
-      if (error instanceof Error) {
-        if (error.message.includes("User ID")) {
-          errorMessage = "Authentication error. Please log out and log in again."
-        } else if (error.message.includes("storage") || error.message.includes("upload")) {
-          errorMessage = "Failed to upload images. Please try again with smaller images or fewer images."
-        } else if (error.message.includes("permission") || error.message.includes("unauthorized")) {
-          errorMessage = "You don't have permission to create listings. Please contact support."
-        }
-
-        console.error("Detailed error:", error.message)
-      }
-
+      console.error("Error updating listing:", error)
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "There was an error updating your listing. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -223,11 +318,37 @@ export default function CreateListingPage() {
     }
   }, [imagePreviews])
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Loading car data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="flex justify-center mt-6">
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    )
+  }
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-        <p className="mb-6">Please log in to create a listing</p>
+        <p className="mb-6">Please log in to edit a listing</p>
         <Button onClick={() => router.push("/auth/login")}>Log In</Button>
       </div>
     )
@@ -236,7 +357,7 @@ export default function CreateListingPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Create Car Listing</h1>
+        <h1 className="text-2xl font-bold mb-6">Edit Car Listing</h1>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -596,41 +717,69 @@ export default function CreateListingPage() {
             <div>
               <FormLabel>Images</FormLabel>
 
-              {/* Image previews */}
+              {/* Existing images */}
+              {existingImages.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Current Images</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2">
+                    {existingImages.map((image, index) => (
+                      <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
+                        <Image
+                          src={image || "/placeholder.svg"}
+                          alt={`Current image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New image previews */}
               {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 mb-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
-                      <img
-                        src={preview || "/placeholder.svg"}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">New Images</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative aspect-video rounded-md overflow-hidden border">
+                        <Image
+                          src={preview || "/placeholder.svg"}
+                          alt={`Preview ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
                 <div className="text-center">
-                  {imagePreviews.length === 0 ? (
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
-                  ) : (
-                    <Upload className="mx-auto h-12 w-12 text-gray-300" />
-                  )}
+                  <Upload className="mx-auto h-12 w-12 text-gray-300" />
                   <div className="mt-4 flex text-sm leading-6 text-gray-600">
                     <label
                       htmlFor="file-upload"
                       className="relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary"
                     >
-                      <span>{imagePreviews.length === 0 ? "Upload images" : "Change images"}</span>
+                      <span>Upload new images</span>
                       <input
                         id="file-upload"
                         name="file-upload"
@@ -657,9 +806,14 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating Listing..." : "Create Listing"}
-            </Button>
+            <div className="flex justify-between">
+              <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Updating Listing..." : "Update Listing"}
+              </Button>
+            </div>
           </form>
         </Form>
       </div>

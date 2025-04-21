@@ -3,10 +3,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Calendar, Fuel, Gauge, Heart } from "lucide-react"
+import { Calendar, Fuel, Gauge } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { FavoriteButton } from "@/components/favorite-button"
 import { getValidImageUrl } from "@/lib/image-fallback"
 import type { Car } from "@/lib/types"
 
@@ -43,14 +44,10 @@ export function CarCard({ car }: CarCardProps) {
           onError={handleImageError}
           unoptimized // Use this for external URLs
         />
-        <Button
-          variant="ghost"
-          size="icon"
+        <FavoriteButton
+          carId={car.id}
           className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
-        >
-          <Heart className="h-4 w-4" />
-          <span className="sr-only">Add to favorites</span>
-        </Button>
+        />
         <Badge className="absolute left-2 top-2">{car.condition}</Badge>
       </div>
       <CardContent className="p-4">

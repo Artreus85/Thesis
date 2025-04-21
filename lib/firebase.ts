@@ -13,6 +13,8 @@ import {
   deleteDoc,
   setDoc,
   limit as firestoreLimit,
+  Timestamp,
+  serverTimestamp,
 } from "firebase/firestore"
 import {
   getAuth,
@@ -24,7 +26,7 @@ import {
 import { uploadFilesToS3, deleteFileFromS3 } from "./s3"
 import { firebaseConfig } from "./firebase-config"
 import { isPreviewEnvironment } from "./environment"
-import type { User, Car } from "./types"
+import type { User, Car, Favorite } from "./types"
 import type { QuerySnapshot, DocumentData } from "firebase/firestore"
 
 // Initialize Firebase
@@ -377,9 +379,29 @@ export async function createCarListing(carData: Omit<Car, "id">, images: File[])
   }
 }
 
-/**
- * Update a car listing
- */
+// Add this function to check if a user is authorized to edit a listing
+export async function isAuthorizedToEditListing(userId: string, listingId: string): Promise<boolean> {
+  try {
+    // If no user ID provided, not authorized
+    if (!userId) return false
+
+    // Get the car listing
+    const car = await getCarById(listingId)
+    if (!car) return false
+
+    // Get the user to check if they're an admin
+    const user = await getUserById(userId)
+    if (!user) return false
+
+    // User is authorized if they are the owner or an admin
+    return car.userId === userId || user.role === "admin"
+  } catch (error) {
+    console.error("Error checking edit authorization:", error)
+    return false
+  }
+}
+
+// Update the updateCarListing function to include authorization checks
 export async function updateCarListing(carId: string, carData: Partial<Car>, newImages?: File[]): Promise<void> {
   try {
     console.log(`Updating car listing with ID: ${carId}`)
@@ -388,6 +410,18 @@ export async function updateCarListing(carId: string, carData: Partial<Car>, new
     const existingCar = await getCarById(carId)
     if (!existingCar) {
       throw new Error(`Car with ID ${carId} not found`)
+    }
+
+    // Get the current user ID from the auth state
+    const currentUser = auth.currentUser
+    if (!currentUser) {
+      throw new Error("User not authenticated")
+    }
+
+    // Check if the user is authorized to edit this listing
+    const isAuthorized = await isAuthorizedToEditListing(currentUser.uid, carId)
+    if (!isAuthorized) {
+      throw new Error("Not authorized to edit this listing")
     }
 
     let imageUrls = existingCar.images || []
@@ -576,5 +610,172 @@ export async function getUserListings(userId: string): Promise<Car[]> {
   } catch (error) {
     console.error(`Error fetching listings for user ${userId}:`, error)
     throw error // Rethrow to be handled by the error handler
+  }
+}
+
+// Add this function to set a user as admin (for testing)
+export async function setUserAsAdmin(userId: string): Promise<void> {
+  try {
+    const db = getFirestore()
+    const userRef = doc(db, "users", userId)
+
+    await updateDoc(userRef, {
+      role: "admin",
+    })
+
+    console.log(`User ${userId} has been set as admin`)
+  } catch (error) {
+    console.error("Error setting user as admin:", error)
+    throw error
+  }
+}
+
+
+/**
+ * Add a car to user's favorites
+ */
+export async function addToFavorites(userId: string, carId: string): Promise<string> {
+  try {
+    // Check if already favorited
+    const existingFavorite = await checkIfFavorited(userId, carId)
+    if (existingFavorite) {
+      return existingFavorite
+    }
+
+    // Add to favorites collection
+    const favoriteRef = await addDoc(collection(db, "favorites"), {
+      userId,
+      carId,
+      createdAt: serverTimestamp(),
+    })
+
+    console.log(`Added car ${carId} to favorites for user ${userId}`)
+    return favoriteRef.id
+  } catch (error) {
+    console.error("Error adding to favorites:", error)
+    throw new Error("Failed to add to favorites")
+  }
+}
+
+/**
+ * Remove a car from user's favorites
+ */
+export async function removeFromFavorites(userId: string, carId: string): Promise<void> {
+  try {
+    // Find the favorite document
+    const favoritesRef = collection(db, "favorites")
+    const q = query(favoritesRef, where("userId", "==", userId), where("carId", "==", carId))
+
+    const querySnapshot = await getDocs(q)
+
+    if (querySnapshot.empty) {
+      console.log(`No favorite found for user ${userId} and car ${carId}`)
+      return
+    }
+
+    // Delete the favorite document
+    const favoriteDoc = querySnapshot.docs[0]
+    await deleteDoc(doc(db, "favorites", favoriteDoc.id))
+
+    console.log(`Removed car ${carId} from favorites for user ${userId}`)
+  } catch (error) {
+    console.error("Error removing from favorites:", error)
+    throw new Error("Failed to remove from favorites")
+  }
+}
+
+/**
+ * Check if a car is favorited by the user
+ */
+export async function checkIfFavorited(userId: string, carId: string): Promise<string | null> {
+  try {
+    if (!userId || !carId) {
+      return null
+    }
+
+    const favoritesRef = collection(db, "favorites")
+    const q = query(favoritesRef, where("userId", "==", userId), where("carId", "==", carId))
+
+    const querySnapshot = await getDocs(q)
+
+    if (querySnapshot.empty) {
+      return null
+    }
+
+    return querySnapshot.docs[0].id
+  } catch (error) {
+    console.error("Error checking if favorited:", error)
+    return null
+  }
+}
+
+/**
+ * Get all favorites for a user
+ */
+export async function getUserFavorites(userId: string): Promise<Favorite[]> {
+  try {
+    const favoritesRef = collection(db, "favorites")
+    const q = query(favoritesRef, where("userId", "==", userId))
+
+    const querySnapshot = await getDocs(q)
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        userId: data.userId,
+        carId: data.carId,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+      } as Favorite
+    })
+  } catch (error) {
+    console.error("Error getting user favorites:", error)
+    return []
+  }
+}
+
+/**
+ * Get all favorited cars for a user
+ */
+export async function getFavoritedCars(userId: string): Promise<Car[]> {
+  try {
+    // Get all favorites for the user
+    const favorites = await getUserFavorites(userId)
+
+    if (favorites.length === 0) {
+      return []
+    }
+
+    // Get car details for each favorite
+    const { getCarById } = await import("./firebase")
+
+    const carPromises = favorites.map((favorite) => getCarById(favorite.carId))
+    const cars = await Promise.all(carPromises)
+
+    // Filter out any null values (cars that might have been deleted)
+    return cars.filter((car) => car !== null) as Car[]
+  } catch (error) {
+    console.error("Error getting favorited cars:", error)
+    return []
+  }
+}
+
+/**
+ * Toggle favorite status for a car
+ */
+export async function toggleFavorite(userId: string, carId: string): Promise<boolean> {
+  try {
+    const isFavorited = await checkIfFavorited(userId, carId)
+
+    if (isFavorited) {
+      await removeFromFavorites(userId, carId)
+      return false // Not favorited anymore
+    } else {
+      await addToFavorites(userId, carId)
+      return true // Now favorited
+    }
+  } catch (error) {
+    console.error("Error toggling favorite:", error)
+    throw new Error("Failed to toggle favorite status")
   }
 }

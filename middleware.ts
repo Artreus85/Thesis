@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
   // For now, we'll just pass through all requests
-  // In the future, you could add authentication checks here
+  // The authentication check will be handled client-side in the edit page component
   return NextResponse.next()
 }
 

@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Car } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,12 @@ export default function LoginPage() {
   const { signIn } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+
+  const getRedirectUrl = () => {
+    const redirect = searchParams.get("redirect")
+    return redirect ? decodeURIComponent(redirect) : null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,8 +37,15 @@ export default function LoginPage() {
         title: "Login successful",
         description: "Welcome back to CarMarket!",
       })
-      // Redirect to home page instead of dashboard
-      router.push("/")
+
+      // Check if there's a redirect URL in the query params
+      const redirectUrl = getRedirectUrl()
+      if (redirectUrl) {
+        router.push(redirectUrl)
+      } else {
+        // Otherwise redirect to home page
+        router.push("/")
+      }
     } catch (error: any) {
       console.error("Login error:", error)
 
@@ -57,8 +71,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container flex h-screen items-center justify-center">
-      <Card className="mx-auto max-w-sm">
+    <div className="container mx-auto px-4 flex items-center justify-center min-h-[calc(100vh-8rem)]">
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />

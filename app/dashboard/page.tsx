@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Car, Heart, Plus, Trash, User, Edit, Eye, WifiOff, ImageOff } from "lucide-react"
+import { Car, Plus, Trash, User, Edit, Eye, WifiOff, ImageOff, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,8 +12,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
 import { getUserListings, deleteListing } from "@/lib/firebase"
+import { getFavoritedCars } from "@/lib/firebase"
 import { getValidImageUrl } from "@/lib/image-fallback"
 import { handleFirestoreError } from "@/lib/firebase-error-handler"
+import { FavoriteButton } from "@/components/favorite-button"
 import type { Car as CarType } from "@/lib/types"
 
 export default function Dashboard() {
@@ -21,7 +23,9 @@ export default function Dashboard() {
   const router = useRouter()
   const { toast } = useToast()
   const [listings, setListings] = useState<CarType[]>([])
+  const [favorites, setFavorites] = useState<CarType[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isFavoritesLoading, setIsFavoritesLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
@@ -67,6 +71,26 @@ export default function Dashboard() {
       router.push("/auth/login")
     }
   }, [authChecked, user, router, toast])
+
+  // Third effect to fetch favorites
+  useEffect(() => {
+    if (!user) return
+
+    const fetchFavorites = async () => {
+      try {
+        setIsFavoritesLoading(true)
+        const favoritedCars = await getFavoritedCars(user.id)
+        setFavorites(favoritedCars)
+      } catch (error) {
+        console.error("Error fetching favorites:", error)
+        handleFirestoreError(error, "Failed to load your favorites")
+      } finally {
+        setIsFavoritesLoading(false)
+      }
+    }
+
+    fetchFavorites()
+  }, [user])
 
   const handleDeleteListing = async (listingId: string) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
@@ -163,14 +187,8 @@ export default function Dashboard() {
     )
   }
 
-  // Rest of your dashboard component remains the same...
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Add a connection status banner at the top */}
-      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md text-green-800 flex items-center">
-        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-        <p className="text-sm">Connected to database</p>
-      </div>
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Dashboard</h1>
@@ -260,14 +278,68 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="favorites">
-          <div className="text-center py-12 border rounded-lg">
-            <Heart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium">No Favorites Yet</h3>
-            <p className="text-muted-foreground mb-4">You haven't added any cars to your favorites yet.</p>
-            <Link href="/cars">
-              <Button>Browse Cars</Button>
-            </Link>
-          </div>
+          {isFavoritesLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : favorites.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favorites.map((car) => (
+                <Card key={car.id}>
+                  <CardHeader className="pb-2">
+                    <CardTitle>
+                      {car.brand} {car.model}
+                    </CardTitle>
+                    <CardDescription>${car.price?.toLocaleString() || "Price not available"}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video relative rounded-md overflow-hidden mb-2">
+                      {imageErrors[car.id] ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                          <ImageOff className="h-12 w-12 text-gray-400" />
+                        </div>
+                      ) : (
+                        <Image
+                          src={getValidImageUrl(car.images?.[0], car) || "/placeholder.svg"}
+                          alt={`${car.brand} ${car.model}`}
+                          fill
+                          className="object-cover"
+                          onError={() => handleImageError(car.id)}
+                          unoptimized
+                        />
+                      )}
+                      <FavoriteButton
+                        carId={car.id}
+                        className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
+                      />
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>Year: {car.year || "N/A"}</p>
+                      <p>Mileage: {car.mileage?.toLocaleString() || "N/A"} mi</p>
+                      <p>Condition: {car.condition || "N/A"}</p>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Link href={`/cars/${car.id}`} className="w-full">
+                      <Button variant="outline" className="w-full">
+                        <Eye className="mr-1 h-4 w-4" />
+                        View Details
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border rounded-lg">
+              <Star className="h-12 w-12 mx-auto mb-4 text-muted-foreground fill-none" />
+              <h3 className="text-lg font-medium">No Favorites Yet</h3>
+              <p className="text-muted-foreground mb-4">You haven't added any cars to your favorites yet.</p>
+              <Link href="/cars">
+                <Button>Browse Cars</Button>
+              </Link>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="account">

@@ -43,7 +43,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
             <Car className="h-6 w-6" />
@@ -64,54 +64,60 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          {loading ? (
-            // Show a subtle loading state
-            <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
-          ) : user ? (
-            <>
-              <Link href="/listings/create" className="hidden md:block">
-                <Button variant="ghost" size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Listing
-                </Button>
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <User className="h-5 w-5" />
+          {(() => {
+            console.log("Header auth state:", {
+              user: user ? { id: user.id, role: user.role } : null,
+              loading,
+            })
+            return loading ? (
+              // Show a subtle loading state
+              <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
+            ) : user ? (
+              <>
+                <Link href="/listings/create" className="hidden md:block">
+                  <Button variant="ghost" size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Listing
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex w-full">
-                      My Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/listings/create" className="flex w-full">
-                      Add Listing
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.role === "admin" && (
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href="/admin" className="flex w-full">
-                        Admin Panel
+                      <Link href="/dashboard" className="flex w-full">
+                        My Dashboard
                       </Link>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>Log Out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <Link href="/auth/login" className="hidden md:block">
-              <Button variant="ghost" size="sm">
-                <LogIn className="mr-2 h-4 w-4" />
-                Log In
-              </Button>
-            </Link>
-          )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/listings/create" className="flex w-full">
+                        Add Listing
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex w-full">
+                          Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>Log Out</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Link href="/auth/login" className="hidden md:block">
+                <Button variant="ghost" size="sm">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Log In
+                </Button>
+              </Link>
+            )
+          })()}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">

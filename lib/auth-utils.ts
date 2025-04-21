@@ -17,3 +17,11 @@ export function clearAuthTokens() {
 
   console.log("Cleared all Firebase auth tokens")
 }
+
+// Add a function to get the redirect URL from query params
+export function getRedirectUrl(): string | null {
+  if (typeof window === "undefined") return null
+
+  const params = new URLSearchParams(window.location.search)
+  return params.get("redirect")
+}

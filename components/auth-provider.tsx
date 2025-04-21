@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { onAuthStateChanged, getAuth, signOut } from "firebase/auth"
+import { onAuthStateChanged, getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
 import { getFirestore, doc, getDoc } from "firebase/firestore"
 import { signIn as firebaseSignIn, signOut as firebaseSignOut, signUp as firebaseSignUp } from "@/lib/firebase"
 import { handleFirestoreError, enableOfflinePersistence } from "@/lib/firebase-error-handler"
@@ -25,9 +25,9 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   connectionBlocked: false,
-  signIn: async () => {},
-  signUp: async () => {},
-  signOut: async () => {},
+  signIn: async () => { },
+  signUp: async () => { },
+  signOut: async () => { },
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -49,90 +49,121 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
   }, [])
 
+  // Modify the useEffect for auth state to improve persistence and error handling
   useEffect(() => {
     console.log("Setting up auth state listener")
+    setLoading(true) // Ensure loading is true when starting
 
-    // Force sign out when the component mounts
-    signOut(auth).catch((error) => {
-      console.error("Error signing out on initial load:", error)
-    })
+    // Initialize Firebase Auth
+    const auth = getAuth()
 
-    // This ensures Firebase has time to initialize
-    const timeoutId = setTimeout(() => {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        console.log("Auth state changed:", firebaseUser ? `User: ${firebaseUser.uid}` : "No user")
+    // Explicitly set persistence to LOCAL
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        console.log("Firebase auth persistence set to LOCAL")
+      })
+      .catch((error) => {
+        console.error("Error setting auth persistence:", error)
+      })
 
-        if (firebaseUser) {
-          try {
-            // Try to get user data from Firestore using the UID as document ID
-            const userDocRef = doc(db, "users", firebaseUser.uid)
-            const userDocSnap = await getDoc(userDocRef)
+    // Set up a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.log("Auth loading timeout reached - forcing loading state to false")
+      setLoading(false)
+    }, 5000) // 5 second timeout as a fallback
 
-            if (userDocSnap.exists()) {
-              console.log("User data retrieved from Firestore")
-              const userData = userDocSnap.data()
-              setUser({
-                id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
-                ...userData,
-                createdAt: userData.createdAt || new Date().toISOString(),
-              })
-            } else {
-              console.log("No user data found in Firestore, using Firebase user data")
-              // Fallback to basic user data from Firebase Auth
+    try {
+      // Set up the auth state listener
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        async (firebaseUser) => {
+          console.log("Auth state changed:", firebaseUser ? `User: ${firebaseUser.uid}` : "No user")
+
+          // Clear the timeout since we got a response
+          clearTimeout(loadingTimeout)
+
+          if (firebaseUser) {
+            try {
+              // Try to get user data from Firestore using the UID as document ID
+              const userDocRef = doc(db, "users", firebaseUser.uid)
+              const userDocSnap = await getDoc(userDocRef)
+
+              if (userDocSnap.exists()) {
+                console.log("User data retrieved from Firestore")
+                const userData = userDocSnap.data()
+                setUser({
+                  id: firebaseUser.uid,
+                  name: userData.name || firebaseUser.displayName || "User",
+                  email: userData.email || firebaseUser.email || "",
+                  role: userData.role || "regular",
+                  createdAt: userData.createdAt || firebaseUser.metadata.creationTime || new Date().toISOString(),
+                })
+              } else {
+                console.log("No user data found in Firestore, using Firebase user data")
+                // Fallback to basic user data from Firebase Auth
+                setUser({
+                  id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
+                  name: firebaseUser.displayName || "User",
+                  email: firebaseUser.email || "",
+                  role: "regular", // Default role
+                  createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                })
+
+                // Attempt to create the user document if it doesn't exist
+                try {
+                  const { setDoc } = await import("firebase/firestore")
+                  await setDoc(userDocRef, {
+                    name: firebaseUser.displayName || "User",
+                    email: firebaseUser.email || "",
+                    role: "regular",
+                    createdAt: new Date().toISOString(),
+                  })
+                  console.log("Created missing user document in Firestore")
+                } catch (createError) {
+                  console.error("Failed to create user document:", createError)
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching user data:", error)
+
+              // Check if this is a connection blocked error
+              if (error instanceof Error && (error.message.includes("network") || error.message.includes("blocked"))) {
+                setConnectionBlocked(true)
+              }
+
+              // Still set basic user data to prevent blocking the UI
               setUser({
                 id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
                 name: firebaseUser.displayName || "User",
                 email: firebaseUser.email || "",
-                role: "regular",
+                role: "regular", // Default role
                 createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
               })
-
-              // Attempt to create the user document if it doesn't exist
-              try {
-                const { setDoc } = await import("firebase/firestore")
-                await setDoc(userDocRef, {
-                  name: firebaseUser.displayName || "User",
-                  email: firebaseUser.email || "",
-                  role: "regular",
-                  createdAt: new Date().toISOString(),
-                })
-                console.log("Created missing user document in Firestore")
-              } catch (createError) {
-                console.error("Failed to create user document:", createError)
-              }
             }
-          } catch (error) {
-            console.error("Error fetching user data:", error)
-
-            // Check if this is a connection blocked error
-            if (error instanceof Error && (error.message.includes("network") || error.message.includes("blocked"))) {
-              setConnectionBlocked(true)
-            }
-
-            // Still set basic user data to prevent blocking the UI
-            setUser({
-              id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
-              name: firebaseUser.displayName || "User",
-              email: firebaseUser.email || "",
-              role: "regular",
-              createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-            })
+          } else {
+            setUser(null)
           }
-        } else {
-          setUser(null)
-        }
 
-        setLoading(false)
-      })
+          setLoading(false)
+        },
+        (error) => {
+          // This is the error handler for onAuthStateChanged
+          console.error("Auth state change error:", error)
+          setLoading(false)
+          setUser(null)
+        },
+      )
 
       return () => {
+        clearTimeout(loadingTimeout)
         unsubscribe()
-        clearTimeout(timeoutId)
       }
-    }, 100) // Small delay to ensure Firebase is initialized
-
-    return () => clearTimeout(timeoutId)
-  }, [auth])
+    } catch (error) {
+      console.error("Error setting up auth state listener:", error)
+      setLoading(false)
+      setUser(null)
+    }
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     setLoading(true)

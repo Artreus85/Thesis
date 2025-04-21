@@ -9,8 +9,8 @@ export async function GET() {
   try {
     // Test both client and admin Firestore connections
     const results = {
-      admin: { success: false, message: "", error: null },
-      client: { success: false, message: "", error: null },
+      admin: { success: false, message: "", error: null as string | null },
+      client: { success: false, message: "", error: null as string | null },
       environment: {
         nodeEnv: process.env.NODE_ENV,
         firebaseProjectId: process.env.FIREBASE_PROJECT_ID || "not set",

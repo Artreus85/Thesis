@@ -22,4 +22,20 @@ export interface Car {
   userId: string
   createdAt: string
   isVisible?: boolean
+  bodyType: string
+  driveType: string
+  color: string
+  doors: number
+  seats: number
+  engineSize: number
+  vin?: string
+  licensePlate?: string
+  features?: string
+}
+
+export interface Favorite {
+  id: string
+  userId: string
+  carId: string
+  createdAt: string
 }

@@ -1,34 +1,40 @@
-import { Suspense } from "react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { CarCard } from "@/components/car-card"
 import { SearchFilters } from "@/components/search-filters"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Add dynamic export
-export const dynamic = "force-dynamic"
+export default function CarsPage() {
+  const searchParams = useSearchParams()
+  const [cars, setCars] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-interface CarsPageProps {
-  searchParams: {
-    brand?: string
-    minPrice?: string
-    maxPrice?: string
-    minYear?: string
-    fuel?: string
-    condition?: string
-    query?: string
-  }
-}
+  useEffect(() => {
+    async function fetchCars() {
+      setLoading(true)
+      try {
+        // Create a params object from the search params
+        const params: Record<string, string> = {}
+        searchParams.forEach((value, key) => {
+          params[key] = value
+        })
 
-export default async function CarsPage({ searchParams }: CarsPageProps) {
-  let cars = []
+        // Dynamically import to prevent build errors
+        const { getFilteredCars } = await import("@/lib/firebase")
+        const filteredCars = await getFilteredCars(params)
+        setCars(filteredCars)
+      } catch (error) {
+        console.error("Error fetching filtered cars:", error)
+        setCars([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  try {
-    // Dynamically import to prevent build errors
-    const { getFilteredCars } = await import("@/lib/firebase")
-    cars = await getFilteredCars(searchParams)
-  } catch (error) {
-    console.error("Error fetching filtered cars:", error)
-    cars = []
-  }
+    fetchCars()
+  }, [searchParams])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -36,7 +42,9 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
 
       <SearchFilters />
 
-      <Suspense fallback={<CarsGridSkeleton />}>
+      {loading ? (
+        <CarsGridSkeleton />
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {cars.length > 0 ? (
             cars.map((car) => <CarCard key={car.id} car={car} />)
@@ -47,7 +55,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
             </div>
           )}
         </div>
-      </Suspense>
+      )}
     </div>
   )
 }
