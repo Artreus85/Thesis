@@ -78,19 +78,19 @@ export default function AdminDebugPage() {
           <CardContent>
             <div className="space-y-2">
               <div>
-                <span className="font-medium">User ID:</span> {user.id}
+                <span className="font-medium">Идентификационен номер на потребителя:</span> {user.id}
               </div>
               <div>
-                <span className="font-medium">Name:</span> {user.name}
+                <span className="font-medium">Име:</span> {user.name}
               </div>
               <div>
-                <span className="font-medium">Email:</span> {user.email}
+                <span className="font-medium">Имейл:</span> {user.email}
               </div>
               <div>
-                <span className="font-medium">Role:</span> {user.role}
+                <span className="font-medium">Роля:</span> {user.role}
               </div>
               <div>
-                <span className="font-medium">Created At:</span> {new Date(user.createdAt).toLocaleString()}
+                <span className="font-medium">Регистриран на:</span> {new Date(user.createdAt).toLocaleString()}
               </div>
             </div>
           </CardContent>
@@ -98,13 +98,13 @@ export default function AdminDebugPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Set User as Admin</CardTitle>
+            <CardTitle>Дайте права на админ</CardTitle>
             <CardDescription>Promote a user to admin role</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">User ID</label>
+                <label className="text-sm font-medium">Потребителски идентификационен номер</label>
                 <Input placeholder="Enter user ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
                 <p className="text-xs text-muted-foreground">
                   Enter the Firebase Auth UID of the user you want to promote
@@ -122,10 +122,10 @@ export default function AdminDebugPage() {
 
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground mb-4">
-          Your current user ID is: <code className="bg-muted px-1 py-0.5 rounded">{user.id}</code>
+          Настоящия ти идентификационен потребителски номер:<code className="bg-muted px-1 py-0.5 rounded">{user.id}</code>
         </p>
         <Button variant="outline" onClick={() => router.push("/admin")}>
-          Back to Admin Panel
+          Обратно към админския панел
         </Button>
       </div>
     </div>

@@ -47,7 +47,7 @@ export default function Home() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-                Find Your Perfect Car
+                Намерете перфектната кола за вас
               </h1>
               <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
                 Browse thousands of cars from trusted sellers. Find the perfect match for your needs and budget.
@@ -55,11 +55,11 @@ export default function Home() {
             </div>
             <div className="space-x-4">
               <Link href="/cars">
-                <Button size="lg">Browse Cars</Button>
+                <Button size="lg">Каталог</Button>
               </Link>
               <Link href="/listings/create">
                 <Button variant="outline" size="lg">
-                  Sell Your Car
+                  Пуснете колата си за продажба
                 </Button>
               </Link>
             </div>
@@ -71,9 +71,9 @@ export default function Home() {
 
       <section className="py-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Featured Listings</h2>
+          <h2 className="text-2xl font-bold">Налични оферти</h2>
           <Link href="/cars">
-            <Button variant="ghost">View All</Button>
+            <Button variant="ghost">Виж всички оферти</Button>
           </Link>
         </div>
 
@@ -89,10 +89,10 @@ export default function Home() {
               cars.map((car) => <CarCard key={car.id} car={car} />)
             ) : (
               <div className="col-span-full text-center py-12">
-                <h3 className="text-lg font-medium">No listings available</h3>
-                <p className="text-muted-foreground">Be the first to add a car listing!</p>
+                <h3 className="text-lg font-medium">Няма налични оферти</h3>
+                { /*<p className="text-muted-foreground">Be the first to add a car listing!</p> */ }
                 <Link href="/listings/create" className="mt-4 inline-block">
-                  <Button>Add Listing</Button>
+                  <Button>Добави оферта</Button>
                 </Link>
               </div>
             )}

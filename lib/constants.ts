@@ -36,20 +36,20 @@ export const BODY_TYPES = [
   "Truck",
 ]
 
-export const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"]
+export const DRIVE_TYPES = ["Предно задвижване", "Задно задвижване", "4x4"]
 
 export const COLORS = [
-  "Black",
-  "White",
-  "Silver",
-  "Gray",
-  "Red",
-  "Blue",
-  "Green",
-  "Yellow",
-  "Brown",
-  "Orange",
-  "Purple",
-  "Gold",
-  "Beige",
+  "Черен",
+  "Бял",
+  "Металик",
+  "Сив",
+  "Червен",
+  "Син",
+  "Зелен",
+  "Жълт",
+  "Кафяв",
+  "Оранжев",
+  "Лилав",
+  "Златен",
+  "Бежаво",
 ]

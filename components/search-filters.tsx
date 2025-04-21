@@ -142,7 +142,7 @@ export function SearchFilters() {
     if (filters.brand && filters.brand !== "any") {
       badges.push(
         <Badge key="brand" variant="outline" className="flex items-center gap-1">
-          Brand: {filters.brand}
+          Марка: {filters.brand}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("brand", "")} />
         </Badge>,
       )
@@ -151,7 +151,7 @@ export function SearchFilters() {
     if (filters.model) {
       badges.push(
         <Badge key="model" variant="outline" className="flex items-center gap-1">
-          Model: {filters.model}
+          Модел: {filters.model}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("model", "")} />
         </Badge>,
       )
@@ -160,7 +160,7 @@ export function SearchFilters() {
     if (filters.condition && filters.condition !== "any") {
       badges.push(
         <Badge key="condition" variant="outline" className="flex items-center gap-1">
-          Condition: {filters.condition}
+          Състояние: {filters.condition}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("condition", "")} />
         </Badge>,
       )
@@ -169,7 +169,7 @@ export function SearchFilters() {
     if (filters.fuel && filters.fuel !== "any") {
       badges.push(
         <Badge key="fuel" variant="outline" className="flex items-center gap-1">
-          Fuel: {filters.fuel}
+          Гориво: {filters.fuel}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("fuel", "")} />
         </Badge>,
       )
@@ -178,7 +178,7 @@ export function SearchFilters() {
     if (filters.bodyType && filters.bodyType !== "any") {
       badges.push(
         <Badge key="bodyType" variant="outline" className="flex items-center gap-1">
-          Body: {filters.bodyType}
+          Каросерия: {filters.bodyType}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("bodyType", "")} />
         </Badge>,
       )
@@ -187,7 +187,7 @@ export function SearchFilters() {
     if (filters.gearbox && filters.gearbox !== "any") {
       badges.push(
         <Badge key="gearbox" variant="outline" className="flex items-center gap-1">
-          Gearbox: {filters.gearbox}
+          Скоростна кутия: {filters.gearbox}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("gearbox", "")} />
         </Badge>,
       )
@@ -215,13 +215,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Brand</label>
+          <label className="text-sm font-medium">Марка</label>
           <Select value={filters.brand} onValueChange={(value) => handleFilterChange("brand", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any brand" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any brand</SelectItem>
+              <SelectItem value="any">Всички марки</SelectItem>
               {CAR_BRANDS.map((brand) => (
                 <SelectItem key={brand} value={brand}>
                   {brand}
@@ -232,7 +232,7 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Model</label>
+          <label className="text-sm font-medium">Модел</label>
           <Input
             type="text"
             placeholder="Any model"
@@ -244,13 +244,13 @@ export function SearchFilters() {
 
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Condition</label>
+          <label className="text-sm font-medium">Състояние</label>
           <Select value={filters.condition} onValueChange={(value) => handleFilterChange("condition", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any condition" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any condition</SelectItem>
+              <SelectItem value="any">Всякакво състояние</SelectItem>
               {CONDITIONS.map((condition) => (
                 <SelectItem key={condition} value={condition}>
                   {condition}
@@ -261,13 +261,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Body Type</label>
+          <label className="text-sm font-medium">Вид категория</label>
           <Select value={filters.bodyType} onValueChange={(value) => handleFilterChange("bodyType", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any body type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any body type</SelectItem>
+              <SelectItem value="any">Всяка категория</SelectItem>
               {BODY_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -278,13 +278,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Fuel Type</label>
+          <label className="text-sm font-medium">Вид гориво</label>
           <Select value={filters.fuel} onValueChange={(value) => handleFilterChange("fuel", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Any fuel type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any fuel type</SelectItem>
+              <SelectItem value="any">Всеки вид гориво</SelectItem>
               {FUEL_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}

@@ -12,7 +12,7 @@ export function Footer() {
               <span className="font-bold">CarMarket</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Find your perfect car on our trusted marketplace. Buy and sell with confidence.
+              Намерете перфектната за вас кола
             </p>
           </div>
           <div className="space-y-4">
@@ -20,12 +20,12 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/cars" className="text-muted-foreground hover:text-foreground">
-                  Browse Cars
+                  Каталог
                 </Link>
               </li>
               <li>
                 <Link href="/listings/create" className="text-muted-foreground hover:text-foreground">
-                  Sell Your Car
+                  Пуснете колата си за продажба
                 </Link>
               </li>
               <li>

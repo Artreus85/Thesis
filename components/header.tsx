@@ -77,7 +77,7 @@ export function Header() {
                 <Link href="/listings/create" className="hidden md:block">
                   <Button variant="ghost" size="sm">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Listing
+                    Добави оферта
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -89,23 +89,23 @@ export function Header() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard" className="flex w-full">
-                        My Dashboard
+                        Моят акаунт
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/listings/create" className="flex w-full">
-                        Add Listing
+                        Добави оферта
                       </Link>
                     </DropdownMenuItem>
                     {user.role === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin" className="flex w-full">
-                          Admin Panel
+                          Админски профил
                         </Link>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => signOut()}>Log Out</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()}>Изход</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
@@ -113,7 +113,7 @@ export function Header() {
               <Link href="/auth/login" className="hidden md:block">
                 <Button variant="ghost" size="sm">
                   <LogIn className="mr-2 h-4 w-4" />
-                  Log In
+                  Вход
                 </Button>
               </Link>
             )
@@ -140,23 +140,23 @@ export function Header() {
                 {user ? (
                   <>
                     <Link href="/dashboard" className="text-sm font-medium">
-                      My Dashboard
+                      Моят акаунт
                     </Link>
                     <Link href="/listings/create" className="text-sm font-medium">
-                      Add Listing
+                      Добавете оферта
                     </Link>
                     {user.role === "admin" && (
                       <Link href="/admin" className="text-sm font-medium">
-                        Admin Panel
+                        Админски профил
                       </Link>
                     )}
                     <Button variant="ghost" onClick={() => signOut()}>
-                      Log Out
+                      Изход
                     </Button>
                   </>
                 ) : (
                   <Link href="/auth/login">
-                    <Button>Log In</Button>
+                    <Button>Вход</Button>
                   </Link>
                 )}
               </nav>

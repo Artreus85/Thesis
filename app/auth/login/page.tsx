@@ -77,9 +77,9 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />
           </div>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Вход</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to access your account
+            Въведете имейла и паролата си, за да влезете в акаунта си.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Email
+                Имейл
               </label>
               <Input
                 id="email"
@@ -106,10 +106,10 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Password
+                  Парола
                 </label>
                 <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
+                  Забравена парола?
                 </Link>
               </div>
               <Input
@@ -126,9 +126,9 @@ export default function LoginPage() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              Нямате профил{" "}
               <Link href="/auth/register" className="text-primary hover:underline">
-                Sign up
+                Регистрирайте се
               </Link>
             </div>
           </CardFooter>
