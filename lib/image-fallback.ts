@@ -24,10 +24,6 @@ export function isValidImageUrl(url: string | undefined | null): boolean {
 
   // Check if URL is from AWS S3
   const isS3Url = url.includes("amazonaws.com") || url.includes("s3.")
-
-  // If in preview environment, all URLs are considered valid
-  if (isPreviewEnvironment()) return true
-
   // For S3 URLs, check if they have required components
   if (isS3Url) {
     // Check if URL has expired (missing signature or expired timestamp)

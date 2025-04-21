@@ -254,7 +254,8 @@ export default function EditListingPage() {
         features: values.features,
         description: values.description,
         images: finalImages,
-      })
+      },
+        images.length > 0 ? images : undefined)
 
       clearInterval(progressInterval)
       setUploadProgress(100)

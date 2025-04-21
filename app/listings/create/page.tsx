@@ -175,7 +175,7 @@ export default function CreateListingPage() {
       }
 
       // Create the listing in Firestore
-      const listingId = await createCarListing(carData, []) // Pass empty array since we already uploaded images
+      const listingId = await createCarListing(carData)
       console.log("Listing created with ID:", listingId)
 
       clearInterval(progressInterval)

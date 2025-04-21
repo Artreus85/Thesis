@@ -7,10 +7,6 @@ import { isPreviewEnvironment } from "./environment"
  * @returns Processed image URLs
  */
 export async function processImageUrls(urls: string[]): Promise<string[]> {
-  // Skip processing in preview environment
-  if (isPreviewEnvironment()) {
-    return urls
-  }
 
   // Filter out any null or undefined values
   const validUrls = urls.filter((url) => !!url)

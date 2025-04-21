@@ -10,16 +10,6 @@ export async function getPresignedUrl(file: File): Promise<{
   publicUrl: string
   key: string
 }> {
-  // In preview environment, use mock implementation
-  if (isPreviewEnvironment()) {
-    const mockUrl = await mockUploadToS3(file)
-    return {
-      presignedUrl: mockUrl,
-      publicUrl: mockUrl,
-      key: `mock-${file.name}`,
-    }
-  }
-
   const response = await fetch("/api/upload", {
     method: "POST",
     headers: {
@@ -43,11 +33,6 @@ export async function getPresignedUrl(file: File): Promise<{
  * Upload a file directly to S3 using a presigned URL
  */
 export async function uploadFileWithPresignedUrl(file: File, presignedUrl: string): Promise<void> {
-  // In preview environment, this is a no-op since mockUploadToS3 already "uploaded" the file
-  if (isPreviewEnvironment()) {
-    return
-  }
-
   const response = await fetch(presignedUrl, {
     method: "PUT",
     body: file,
@@ -65,11 +50,6 @@ export async function uploadFileWithPresignedUrl(file: File, presignedUrl: strin
  * Upload a file to S3 (handles both getting the presigned URL and uploading)
  */
 export async function uploadFileToS3(file: File): Promise<string> {
-  // In preview environment, use mock implementation
-  if (isPreviewEnvironment()) {
-    return mockUploadToS3(file)
-  }
-
   // Get a presigned URL
   const { presignedUrl, publicUrl } = await getPresignedUrl(file)
 
@@ -84,11 +64,6 @@ export async function uploadFileToS3(file: File): Promise<string> {
  * Upload multiple files to S3
  */
 export async function uploadFilesToS3(files: File[]): Promise<string[]> {
-  // In preview environment, use mock implementation
-  if (isPreviewEnvironment()) {
-    return mockUploadMultipleToS3(files)
-  }
-
   const uploadPromises = files.map((file) => uploadFileToS3(file))
   return Promise.all(uploadPromises)
 }

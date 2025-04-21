@@ -18,10 +18,6 @@ const bucketName = process.env.NEXT_PUBLIC_AWS_S3_BUCKET_NAME!
  * Upload a file to S3
  */
 export async function uploadFileToS3(file: File): Promise<string> {
-  // In preview environment, use mock implementation
-  if (isPreviewEnvironment()) {
-    return mockUploadToS3(file)
-  }
 
   const fileBuffer = await file.arrayBuffer()
   const fileName = `car-images/${Date.now()}-${file.name.replace(/\s+/g, "-").toLowerCase()}`
@@ -59,10 +55,7 @@ export async function uploadFileToS3(file: File): Promise<string> {
  * Upload multiple files to S3
  */
 export async function uploadFilesToS3(files: File[]): Promise<string[]> {
-  // In preview environment, use mock implementation
-  if (isPreviewEnvironment()) {
-    return mockUploadMultipleToS3(files)
-  }
+
 
   console.log(`Uploading ${files.length} files to S3`)
 
@@ -86,12 +79,6 @@ export async function uploadFilesToS3(files: File[]): Promise<string[]> {
  * Delete a file from S3
  */
 export async function deleteFileFromS3(fileUrl: string): Promise<void> {
-  // Skip deletion in preview environment
-  if (isPreviewEnvironment()) {
-    console.log(`[Preview] Skipping S3 deletion for: ${fileUrl}`)
-    return
-  }
-
   try {
     // Extract the key from the URL
     const urlParts = new URL(fileUrl)
@@ -115,11 +102,6 @@ export async function deleteFileFromS3(fileUrl: string): Promise<void> {
  * Get a signed URL for an S3 object
  */
 export async function getS3SignedUrl(key: string): Promise<string> {
-  // In preview environment, return a placeholder
-  if (isPreviewEnvironment()) {
-    return `/placeholder.svg?height=600&width=800&query=${key}`
-  }
-
   try {
     console.log(`Generating signed URL for S3 object: ${key}`)
     const url = await getSignedUrl(
@@ -142,11 +124,6 @@ export async function getS3SignedUrl(key: string): Promise<string> {
  * Refresh an expiring S3 URL
  */
 export async function refreshS3Url(url: string): Promise<string> {
-  // Skip in preview environment
-  if (isPreviewEnvironment() || url.includes("placeholder.svg")) {
-    return url
-  }
-
   try {
     // Extract the key from the URL
     const urlParts = new URL(url)

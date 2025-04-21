@@ -19,11 +19,6 @@ export function getMockImageUrl(fileName: string): string {
  * Mock implementation of file upload for preview environments
  */
 export async function mockUploadToS3(file: File): Promise<string> {
-  if (isPreviewEnvironment()) {
-    // In preview, return a placeholder image
-    return getMockImageUrl(file.name)
-  }
-
   // In real environments, this should never be called
   throw new Error("Mock upload called in production environment")
 }

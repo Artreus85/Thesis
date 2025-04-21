@@ -25,7 +25,6 @@ import {
 } from "firebase/auth"
 import { uploadFilesToS3, deleteFileFromS3 } from "./s3"
 import { firebaseConfig } from "./firebase-config"
-import { isPreviewEnvironment } from "./environment"
 import type { User, Car, Favorite } from "./types"
 import type { QuerySnapshot, DocumentData } from "firebase/firestore"
 
@@ -169,7 +168,7 @@ export async function deleteListing(listingId: string): Promise<void> {
   try {
     // Delete images from S3
     const car = await getCarById(listingId)
-    if (car && !isPreviewEnvironment()) {
+    if (car) {
       for (const imageUrl of car.images) {
         try {
           await deleteFileFromS3(imageUrl)
@@ -372,61 +371,53 @@ export async function getCarById(carId: string): Promise<Car | null> {
 /**
  * Create a car listing
  */
-export async function createCarListing(carData: Omit<Car, "id">, images: File[]): Promise<string> {
+export async function createCarListing(
+  carData: Omit<Car, "id">,
+  images?: File[]
+): Promise<string> {
   try {
     console.log("Starting car listing creation process")
 
-    // Check if we already have image URLs in the carData
+    // If image URLs already exist in carData, use them
     let imageUrls: string[] = carData.images || []
 
-    // Only upload images if they're provided and we don't already have URLs
-    if (images.length > 0 && imageUrls.length === 0) {
+    // If image files are passed in and we don’t already have URLs
+    if (images && images.length > 0 && imageUrls.length === 0) {
       console.log(`Uploading ${images.length} images...`)
 
       try {
-        if (isPreviewEnvironment()) {
-          // In preview environment, use placeholder images
-          imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
-          console.log("Using placeholder images in preview environment:", imageUrls)
-        } else {
-          // In production, upload to S3
-          imageUrls = await uploadFilesToS3(images)
-          console.log("Images uploaded successfully to S3:", imageUrls)
-        }
+        imageUrls = await uploadFilesToS3(images)
+        console.log("Images uploaded successfully to S3:", imageUrls)
       } catch (uploadError) {
         console.error("Error uploading images:", uploadError)
         // Fallback to placeholder images if upload fails
-        imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
+        imageUrls = images.map(
+          (_, index) =>
+            `/placeholder.svg?height=600&width=800&query=car ${index + 1}`
+        )
         console.log("Using placeholder images instead:", imageUrls)
       }
     }
 
-    // Create car document in Firestore
-    console.log("Creating Firestore document with data:", { ...carData, images: imageUrls })
-
-    // Ensure all required fields are present and properly formatted
+    // Construct full car data for Firestore
     const completeCarData = {
       ...carData,
       images: imageUrls,
       createdAt: new Date(),
       isVisible: true,
-      // Add default values for any potentially missing fields
       year: carData.year || new Date().getFullYear(),
       mileage: carData.mileage || 0,
       power: carData.power || 0,
       price: carData.price || 0,
-      // Ensure userId is a string
       userId: carData.userId ? String(carData.userId) : "",
     }
 
-    // Check if userId is valid
     if (!completeCarData.userId) {
       throw new Error("User ID is required to create a listing")
     }
 
     console.log("Final car data being sent to Firestore:", completeCarData)
 
-    // Create the document in Firestore
     const docRef = await addDoc(collection(db, "cars"), completeCarData)
 
     console.log("Car listing created with ID:", docRef.id)
@@ -489,27 +480,14 @@ export async function updateCarListing(carId: string, carData: Partial<Car>, new
       console.log(`Uploading ${newImages.length} new images...`)
 
       try {
-        if (isPreviewEnvironment()) {
-          // In preview environment, use placeholder images
-          const newPlaceholders = newImages.map(
-            (_, index) => `/placeholder.svg?height=600&width=800&query=new car ${index + 1}`,
-          )
-          imageUrls = [...imageUrls, ...newPlaceholders]
-          console.log("Added placeholder images in preview environment")
-        } else {
-          // In production, upload to S3
-          const newImageUrls = await uploadFilesToS3(newImages)
-          imageUrls = [...imageUrls, ...newImageUrls]
-          console.log("New images uploaded successfully to S3")
-        }
+        const newImageUrls = await uploadFilesToS3(newImages)
+        imageUrls = [...imageUrls, ...newImageUrls]
+        console.log("New images uploaded successfully to S3:", newImageUrls)
       } catch (uploadError) {
-        console.error("Error uploading new images:", uploadError)
-        // Fallback to placeholder images if upload fails
-        const fallbackImages = newImages.map(
-          (_, index) => `/placeholder.svg?height=600&width=800&query=new car ${index + 1}`,
-        )
-        imageUrls = [...imageUrls, ...fallbackImages]
-        console.log("Using placeholder images for new uploads")
+        console.error("❌ S3 upload failed:", uploadError)
+        const fallbackImages = newImages.map((_, index) => `/laina ${index + 1}`)
+        imageUrls = fallbackImages
+        console.log("Using fallback placeholder images:", fallbackImages)
       }
     }
 
