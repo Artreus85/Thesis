@@ -7,18 +7,37 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
 import { getCarById, updateCarListing } from "@/lib/firebase"
 import { uploadFilesToS3 } from "@/lib/s3"
-import { CAR_BRANDS, FUEL_TYPES, GEARBOX_TYPES, CONDITIONS, BODY_TYPES, DRIVE_TYPES, COLORS } from "@/lib/constants"
+import {
+  CAR_BRANDS,
+  FUEL_TYPES,
+  GEARBOX_TYPES,
+  CONDITIONS,
+  BODY_TYPES,
+  DRIVE_TYPES,
+  COLORS,
+} from "@/lib/constants"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import Image from "next/image"
 
+// -------------------
+// Schema
+// -------------------
 const formSchema = z.object({
   brand: z.string().min(1, "Brand is required"),
   model: z.string().min(1, "Model is required"),
@@ -42,21 +61,27 @@ const formSchema = z.object({
 })
 
 export default function EditListingPage() {
-  const params = useParams()
-  const carId = params.id as string
-  const { user } = useAuth()
+  // -------------------
+  // Hooks & State
+  // -------------------
+  const { id: carId } = useParams<{ id: string }>()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+
   const [images, setImages] = useState<File[]>([])
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [pageLoading, setPageLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [car, setCar] = useState<any>(null)
 
+  // -------------------
+  // Form
+  // -------------------
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -82,11 +107,15 @@ export default function EditListingPage() {
     },
   })
 
+  // -------------------
   // Fetch car data
+  // -------------------
   useEffect(() => {
+    if (!carId) return
+
     async function fetchCar() {
       try {
-        setLoading(true)
+        setPageLoading(true)
         const carData = await getCarById(carId)
 
         if (!carData) {
@@ -95,13 +124,10 @@ export default function EditListingPage() {
         }
 
         setCar(carData)
+        setExistingImages(carData.images || [])
 
-        // Check if the current user is the owner or an admin
+        // Authorisation check
         if (user && (user.id === carData.userId || user.role === "admin")) {
-          // Set existing images
-          setExistingImages(carData.images || [])
-
-          // Populate form
           form.reset({
             brand: carData.brand || "",
             model: carData.model || "",
@@ -124,74 +150,44 @@ export default function EditListingPage() {
             description: carData.description || "",
           })
         } else {
-          // User is not authorized to edit this listing
+          // Not authorised
           setError("You don't have permission to edit this listing")
-
-          // After a short delay, redirect to the car detail page
-          setTimeout(() => {
-            router.push(`/cars/${carId}`)
-          }, 3000)
+          setTimeout(() => router.push(`/cars/${carId}`), 3000)
         }
       } catch (err) {
         console.error("Error fetching car:", err)
         setError("Failed to load car data")
       } finally {
-        setLoading(false)
+        setPageLoading(false)
       }
     }
 
-    // Add a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.log("Edit page loading timeout reached - forcing loading state to false")
-        setLoading(false)
-        setError("Loading timed out. Please try refreshing the page.")
-      }
-    }, 10000) // 10 second timeout
-
-    if (carId) {
-      console.log("Edit page auth state:", { user, loading: loading })
-
-      if (!user && !loading) {
-        // If user is not logged in and auth loading is complete, redirect to login page
-        console.log("User not authenticated, redirecting to login")
-        setError("Please log in to edit listings")
-        setTimeout(() => {
-          router.push(`/auth/login?redirect=/listings/edit/${carId}`)
-        }, 2000)
-      } else if (user) {
-        // If user is logged in, fetch car data
-        console.log("User authenticated, fetching car data")
-        fetchCar()
-      } else {
-        // If auth is still loading, we'll wait for it to complete
-        console.log("Auth still loading, waiting...")
-      }
+    // Redirect unauthenticated user when auth has resolved
+    if (!user && !authLoading) {
+      setError("Please log in to edit listings")
+      setTimeout(() => router.push(`/auth/login?redirect=/listings/edit/${carId}`), 2000)
+      return
     }
 
-    return () => {
-      clearTimeout(loadingTimeout)
+    if (user) {
+      fetchCar()
     }
-  }, [carId, user, loading, form, router])
+  }, [carId, user, authLoading, form, router])
 
+  // -------------------
+  // Image helpers
+  // -------------------
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const fileArray = Array.from(e.target.files)
-
-      // Limit to 5 new images
-      const selectedFiles = fileArray.slice(0, 5)
-      setImages(selectedFiles)
-
-      // Create preview URLs
-      const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file))
-      setImagePreviews(previewUrls)
+    if (e.target.files?.length) {
+      const fileArray = Array.from(e.target.files).slice(0, 5) // Limit to 5
+      setImages(fileArray)
+      setImagePreviews(fileArray.map((file) => URL.createObjectURL(file)))
     }
   }, [])
 
   const removeImage = useCallback((index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
     setImagePreviews((prev) => {
-      // Revoke the URL to prevent memory leaks
       URL.revokeObjectURL(prev[index])
       return prev.filter((_, i) => i !== index)
     })
@@ -199,126 +195,89 @@ export default function EditListingPage() {
 
   const removeExistingImage = useCallback(
     (index: number) => {
-      const imageToRemove = existingImages[index]
-      setImagesToDelete((prev) => [...prev, imageToRemove])
+      setImagesToDelete((prev) => [...prev, existingImages[index]])
       setExistingImages((prev) => prev.filter((_, i) => i !== index))
     },
     [existingImages],
   )
 
+  // -------------------
+  // Submit handler
+  // -------------------
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to update a listing",
-        variant: "destructive",
-      })
+      toast({ title: "Authentication required", description: "Please log in to update a listing", variant: "destructive" })
       router.push("/auth/login")
       return
     }
 
-    // Check if user is authorized to edit this listing
     if (car && user.id !== car.userId && user.role !== "admin") {
-      toast({
-        title: "Not authorized",
-        description: "You don't have permission to edit this listing",
-        variant: "destructive",
-      })
+      toast({ title: "Not authorised", description: "You don't have permission to edit this listing", variant: "destructive" })
       router.push(`/cars/${carId}`)
       return
     }
 
     if (existingImages.length === 0 && images.length === 0) {
-      toast({
-        title: "Images required",
-        description: "Please upload at least one image of your car",
-        variant: "destructive",
-      })
+      toast({ title: "Images required", description: "Please upload at least one image of your car", variant: "destructive" })
       return
     }
 
     setIsSubmitting(true)
-    setUploadProgress(10) // Start progress
+    setUploadProgress(10)
 
     try {
-      // Simulate progress updates
       const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + 10
-        })
+        setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10))
       }, 500)
 
-      // Upload new images if any
-      let newImageUrls: string[] = []
-      if (images.length > 0) {
-        newImageUrls = await uploadFilesToS3(images)
-      }
-
-      // Combine existing images (that weren't deleted) with new ones
+      const newImageUrls = images.length ? await uploadFilesToS3(images) : []
       const finalImages = [...existingImages, ...newImageUrls]
 
-      // Update car data
-      const carData = {
+      await updateCarListing(carId, {
         brand: values.brand,
         model: values.model,
-        year: Number.parseInt(values.year),
-        mileage: Number.parseInt(values.mileage),
+        year: Number(values.year),
+        mileage: Number(values.mileage),
         fuel: values.fuel,
         gearbox: values.gearbox,
-        power: Number.parseInt(values.power),
-        price: Number.parseInt(values.price),
+        power: Number(values.power),
+        price: Number(values.price),
         condition: values.condition,
         bodyType: values.bodyType,
         driveType: values.driveType,
         color: values.color,
-        doors: Number.parseInt(values.doors),
-        seats: Number.parseInt(values.seats),
-        engineSize: Number.parseFloat(values.engineSize),
+        doors: Number(values.doors),
+        seats: Number(values.seats),
+        engineSize: Number(values.engineSize),
         vin: values.vin,
         licensePlate: values.licensePlate,
         features: values.features,
         description: values.description,
         images: finalImages,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Update the listing
-      await updateCarListing(carId, carData)
+      })
 
       clearInterval(progressInterval)
-      setUploadProgress(100) // Complete progress
+      setUploadProgress(100)
 
-      toast({
-        title: "Listing updated",
-        description: "Your car listing has been updated successfully",
-      })
-
-      // Navigate to the updated listing
+      toast({ title: "Listing updated", description: "Your car listing has been updated successfully" })
       router.push(`/cars/${carId}`)
-    } catch (error) {
-      console.error("Error updating listing:", error)
-      toast({
-        title: "Error",
-        description: "There was an error updating your listing. Please try again.",
-        variant: "destructive",
-      })
+    } catch (err) {
+      console.error("Error updating listing:", err)
+      toast({ title: "Error", description: "There was an error updating your listing. Please try again.", variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Clean up preview URLs when component unmounts
-  React.useEffect(() => {
-    return () => {
-      imagePreviews.forEach((url) => URL.revokeObjectURL(url))
-    }
+  // Clean up previews
+  useEffect(() => {
+    return () => imagePreviews.forEach(URL.revokeObjectURL)
   }, [imagePreviews])
 
-  if (loading) {
+  // -------------------
+  // Render
+  // -------------------
+  if (pageLoading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
         <div className="flex flex-col items-center">
