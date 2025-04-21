@@ -201,80 +201,138 @@ export async function toggleListingVisibility(listingId: string, isVisible: bool
   }
 }
 
-/**
- * Get filtered cars
- */
+// Update the getFilteredCars function to handle more filters
 export async function getFilteredCars(searchParams: {
-  brand?: string
-  minPrice?: string
-  maxPrice?: string
-  minYear?: string
-  fuel?: string
-  condition?: string
-  query?: string
+  brand?: string;
+  model?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minYear?: string;
+  maxYear?: string;
+  fuel?: string;
+  condition?: string;
+  bodyType?: string;
+  driveType?: string;
+  gearbox?: string;
+  query?: string;
 }): Promise<Car[]> {
+  // Build your base Ref
+  const carsRef = collection(db, "cars");
+  console.log("Getting filtered cars with params:", searchParams);
+
   try {
-    console.log("Getting filtered cars with params:", searchParams)
-    const carsRef = collection(db, "cars")
+    // 1) Start building the Firestore query
+    let q = query(carsRef);
 
-    // Start with a basic query
-    let q = query(carsRef, orderBy("createdAt", "desc"))
-
-    // Add filters one by one
+    // 2) Equality filters
     if (searchParams.brand && searchParams.brand !== "any") {
-      q = query(q, where("brand", "==", searchParams.brand))
+      q = query(q, where("brand", "==", searchParams.brand));
     }
-
     if (searchParams.fuel && searchParams.fuel !== "any") {
-      q = query(q, where("fuel", "==", searchParams.fuel))
+      q = query(q, where("fuel", "==", searchParams.fuel));
     }
-
     if (searchParams.condition && searchParams.condition !== "any") {
-      q = query(q, where("condition", "==", searchParams.condition))
+      q = query(q, where("condition", "==", searchParams.condition));
+    }
+    if (searchParams.bodyType && searchParams.bodyType !== "any") {
+      q = query(q, where("bodyType", "==", searchParams.bodyType));
+    }
+    if (searchParams.driveType && searchParams.driveType !== "any") {
+      q = query(q, where("driveType", "==", searchParams.driveType));
+    }
+    if (searchParams.gearbox && searchParams.gearbox !== "any") {
+      q = query(q, where("gearbox", "==", searchParams.gearbox));
     }
 
-    if (searchParams.minYear) {
-      q = query(q, where("year", ">=", Number.parseInt(searchParams.minYear)))
+    // 3) Range filter on year (Firestore allows only one range per query)
+    if (searchParams.minYear && searchParams.minYear !== "2000") {
+      const minY = Number.parseInt(searchParams.minYear, 10);
+      q = query(q, where("year", ">=", minY));
+      // MUST orderBy the same field you range on
+      q = query(q, orderBy("year", "desc"));
     }
 
-    // Execute the query
-    console.log("Executing filtered query...")
-    const snapshot = await getDocs(q)
-    console.log(`Query returned ${snapshot.docs.length} cars`)
+    // 4) Secondary ordering by creation date
+    q = query(q, orderBy("createdAt", "desc"));
 
-    // Process the results
+    console.log("Executing filtered query...");
+    const snapshot = await getDocs(q);
+    console.log(`Query returned ${snapshot.docs.length} cars before client-side filtering`);
+
+    // 5) Map to your Car type
     let results = snapshot.docs.map((doc) => {
-      const data = doc.data()
+      const data = doc.data() as any;
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-      } as Car
-    })
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : data.createdAt,
+      } as Car;
+    });
 
-    // Apply client-side filtering for price range and query
-    if (searchParams.minPrice) {
-      results = results.filter((car) => car.price >= Number.parseInt(searchParams.minPrice!))
+    // 6) Client‑side filtering for things Firestore can’t handle
+    if (searchParams.model?.trim()) {
+      const m = searchParams.model.toLowerCase();
+      results = results.filter((c) => c.model?.toLowerCase().includes(m));
+      console.log(`After model filter: ${results.length} cars`);
     }
 
-    if (searchParams.maxPrice) {
-      results = results.filter((car) => car.price <= Number.parseInt(searchParams.maxPrice!))
+    if (searchParams.maxYear && +searchParams.maxYear !== new Date().getFullYear()) {
+      const maxY = Number.parseInt(searchParams.maxYear, 10);
+      results = results.filter((c) => c.year <= maxY);
+      console.log(`After maxYear filter: ${results.length} cars`);
     }
 
-    if (searchParams.query) {
-      const query = searchParams.query.toLowerCase()
+    if (searchParams.minPrice && +searchParams.minPrice > 0) {
+      const minP = Number.parseInt(searchParams.minPrice, 10);
+      results = results.filter((c) => c.price >= minP);
+      console.log(`After minPrice filter: ${results.length} cars`);
+    }
+
+    if (searchParams.maxPrice && +searchParams.maxPrice < Infinity) {
+      const maxP = Number.parseInt(searchParams.maxPrice, 10);
+      results = results.filter((c) => c.price <= maxP);
+      console.log(`After maxPrice filter: ${results.length} cars`);
+    }
+
+    if (searchParams.query?.trim()) {
+      const ql = searchParams.query.toLowerCase();
       results = results.filter(
-        (car) =>
-          car.brand.toLowerCase().includes(query) ||
-          car.model.toLowerCase().includes(query) ||
-          car.description?.toLowerCase().includes(query),
-      )
+        (c) =>
+          c.brand.toLowerCase().includes(ql) ||
+          c.model.toLowerCase().includes(ql) ||
+          c.description.toLowerCase().includes(ql) ||
+          (c.bodyType ?? "").toLowerCase().includes(ql) ||
+          (c.color ?? "").toLowerCase().includes(ql) ||
+          c.condition.toLowerCase().includes(ql)
+      );
+      console.log(`After text query filter: ${results.length} cars`);
     }
 
-    return results
-  } catch (error) {
-    console.error("Error fetching filtered cars:", error)
-    return []
+    // 7) Fallback if no matches and filters were specified
+    if (results.length === 0 && Object.keys(searchParams).length > 0) {
+      console.log("No results found with filters, falling back to all cars");
+      const allSnap = await getDocs(query(carsRef, orderBy("createdAt", "desc")));
+      results = allSnap.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate
+            ? data.createdAt.toDate().toISOString()
+            : data.createdAt,
+        } as Car;
+      });
+    }
+
+    console.log(`Returning ${results.length} cars after all filtering`);
+    return results;
+
+  } catch (error: any) {
+    // Surface the Firestore error so you can click through to create the missing index
+    console.error("Error fetching filtered cars:", error);
+    throw error; // or `return []` if you really want to swallow it
   }
 }
 
@@ -629,7 +687,6 @@ export async function setUserAsAdmin(userId: string): Promise<void> {
     throw error
   }
 }
-
 
 /**
  * Add a car to user's favorites

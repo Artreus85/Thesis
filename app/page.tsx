@@ -14,13 +14,20 @@ export default function Home() {
     async function fetchCars() {
       try {
         // Dynamically import to prevent build errors
-        const { getCarListings } = await import("@/lib/firebase")
+        const { getFilteredCars } = await import("@/lib/firebase")
         console.log("Fetching car listings for homepage...")
 
-        // Destructure the result to get just the cars array
-        const result = await getCarListings(8) // Limit to 8 featured listings
-        setCars(result.cars)
-        console.log(`Fetched ${result.cars.length} car listings for homepage`)
+        // Get featured cars for homepage (newer first, limit to 8)
+        const params = {
+          // Empty params to get all visible cars
+          // The sorting by createdAt desc is handled in the getFilteredCars function
+        }
+
+        const result = await getFilteredCars(params)
+
+        // Take just the first 8 cars
+        setCars(result.slice(0, 8))
+        console.log(`Fetched ${result.length} car listings for homepage, showing 8`)
       } catch (error) {
         console.error("Error fetching car listings:", error)
         // Provide fallback data if fetch fails
