@@ -29,7 +29,8 @@ export default function AdminPage() {
         console.log("Няма потребител, пренасочване...")
         router.push("/auth/login")
         return
-      } else if (user.role !== "admin") {
+      } 
+      else if (user.role !== "admin") {
         console.log("Потребителят не е администратор, пренасочване...")
         router.push("/")
         return
@@ -48,7 +49,8 @@ export default function AdminPage() {
           setUsers(usersData)
           setListings(listingsData)
           console.log(`Заредени са ${usersData.length} потребители и ${listingsData.length} обяви`)
-        } catch (error) {
+        } 
+        catch (error) {
           console.error("Грешка при зареждане:", error)
           setError("Неуспешно зареждане на админ данни. Опитайте отново.")
           toast({
