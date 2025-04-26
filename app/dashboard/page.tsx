@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
-import { getUserListings, deleteListing } from "@/lib/firebase"
-import { getFavoritedCars } from "@/lib/firebase"
+import { getUserListings, deleteListing, getFavoritedCars } from "@/lib/firebase"
 import { getValidImageUrl } from "@/lib/image-fallback"
 import { handleFirestoreError } from "@/lib/firebase-error-handler"
 import { FavoriteButton } from "@/components/favorite-button"
 import type { Car as CarType } from "@/lib/types"
+// Import the ProfileEditForm component
+import { ProfileEditForm } from "@/components/profile-edit-form"
 
 export default function Dashboard() {
   const { user, loading: authLoading, connectionBlocked } = useAuth()
@@ -30,49 +31,35 @@ export default function Dashboard() {
   const [authChecked, setAuthChecked] = useState(false)
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
 
-  // First effect just to track when auth is checked
   useEffect(() => {
     if (!authLoading) {
       setAuthChecked(true)
-      console.log("Auth state checked, user:", user ? "logged in" : "not logged in")
+      console.log("Проверка на автентикацията приключи:", user ? "вписан" : "не е вписан")
     }
   }, [authLoading, user])
 
-  // Second effect to fetch data once auth is checked
   useEffect(() => {
-    // Only run this effect if auth has been checked
     if (!authChecked) return
 
-    // If user is logged in, fetch their listings
     if (user) {
       const fetchData = async () => {
         try {
-          console.log("Fetching listings for dashboard...")
           setIsLoading(true)
           const userListings = await getUserListings(user.id)
-          console.log(`Found ${userListings.length} listings for current user`)
           setListings(userListings)
         } catch (error) {
-          console.error("Error fetching dashboard data:", error)
-
-          // Use our error handler
-          handleFirestoreError(error, "Failed to load your listings")
-
-          setError("Failed to load your listings. Please try again later.")
+          handleFirestoreError(error, "Неуспешно зареждане на вашите обяви")
+          setError("Неуспешно зареждане на обявите. Моля, опитайте по-късно.")
         } finally {
           setIsLoading(false)
         }
       }
-
       fetchData()
     } else {
-      // If user is not logged in, redirect to login
-      console.log("User not authenticated, redirecting to login...")
       router.push("/auth/login")
     }
-  }, [authChecked, user, router, toast])
+  }, [authChecked, user, router])
 
-  // Third effect to fetch favorites
   useEffect(() => {
     if (!user) return
 
@@ -82,8 +69,7 @@ export default function Dashboard() {
         const favoritedCars = await getFavoritedCars(user.id)
         setFavorites(favoritedCars)
       } catch (error) {
-        console.error("Error fetching favorites:", error)
-        handleFirestoreError(error, "Failed to load your favorites")
+        handleFirestoreError(error, "Неуспешно зареждане на любими")
       } finally {
         setIsFavoritesLoading(false)
       }
@@ -93,17 +79,16 @@ export default function Dashboard() {
   }, [user])
 
   const handleDeleteListing = async (listingId: string) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
+    if (window.confirm("Сигурни ли сте, че искате да изтриете тази обява?")) {
       try {
         await deleteListing(listingId)
         setListings(listings.filter((l) => l.id !== listingId))
         toast({
-          title: "Listing deleted",
-          description: "Your listing has been deleted successfully",
+          title: "Обявата е изтрита",
+          description: "Вашата обява беше успешно изтрита",
         })
       } catch (error) {
-        console.error("Error deleting listing:", error)
-        handleFirestoreError(error, "Failed to delete listing")
+        handleFirestoreError(error, "Неуспешно изтриване на обявата")
       }
     }
   }
@@ -115,71 +100,65 @@ export default function Dashboard() {
     }))
   }
 
-  // Show loading state while authentication is in progress
   if (authLoading || (isLoading && user)) {
     return (
       <div className="container mx-auto px-4 py-8 flex flex-col justify-center items-center h-[70vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-        <p className="text-muted-foreground">Loading your dashboard...</p>
+        <p className="text-muted-foreground">Зареждане на таблото...</p>
       </div>
     )
   }
 
-  // Show connection blocked warning
   if (connectionBlocked) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-6">
           <WifiOff className="h-4 w-4 mr-2" />
-          <AlertTitle>Connection Blocked</AlertTitle>
+          <AlertTitle>Връзката е блокирана</AlertTitle>
           <AlertDescription>
-            Your connection to our database appears to be blocked. This is often caused by ad blockers or privacy
-            extensions. Please disable them for this site or add an exception to view your dashboard.
+            Връзката с базата данни е блокирана. Проверете разширенията за поверителност или добавете изключение за този
+            сайт.
           </AlertDescription>
         </Alert>
-
         {user && (
           <div className="text-center py-8">
-            <h1 className="text-2xl font-bold mb-4">Welcome, {user.name}</h1>
-            <p className="mb-6 text-muted-foreground">We're showing limited functionality due to connection issues.</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <h1 className="text-2xl font-bold mb-4">Здравей, {user.name}</h1>
+            <p className="mb-6 text-muted-foreground">Показваме ограничена функционалност поради проблем с връзката.</p>
+            <Button onClick={() => window.location.reload()}>Опитай отново</Button>
           </div>
         )}
       </div>
     )
   }
 
-  // Show error state if there was an error loading data
   if (error && !isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="max-w-md mx-auto border rounded-lg p-8 shadow-sm">
-          <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+          <h1 className="text-2xl font-bold mb-4">Възникна грешка</h1>
           <p className="mb-6 text-muted-foreground">{error}</p>
           <Button onClick={() => window.location.reload()} size="lg">
-            Try Again
+            Опитай отново
           </Button>
         </div>
       </div>
     )
   }
 
-  // For client-side rendering, we'll render a placeholder first
-  // This helps avoid hydration errors when redirecting
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="max-w-md mx-auto border rounded-lg p-8 shadow-sm">
           <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p className="mb-6 text-muted-foreground">Please log in to view your dashboard and manage your listings.</p>
+          <h1 className="text-2xl font-bold mb-4">Необходим е вход</h1>
+          <p className="mb-6 text-muted-foreground">Впишете се, за да управлявате своите обяви.</p>
           <Link href="/auth/login">
-            <Button size="lg">Log In</Button>
+            <Button size="lg">Вход</Button>
           </Link>
           <p className="mt-4 text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Нямате акаунт?{" "}
             <Link href="/auth/register" className="text-primary hover:underline">
-              Sign up
+              Регистрация
             </Link>
           </p>
         </div>
@@ -190,20 +169,20 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">My Dashboard</h1>
+        <h1 className="text-3xl font-bold">Моето табло</h1>
         <Link href="/listings/create">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Add New Listing
+            Нова обява
           </Button>
         </Link>
       </div>
 
       <Tabs defaultValue="listings">
         <TabsList className="mb-6">
-          <TabsTrigger value="listings">My Listings</TabsTrigger>
-          <TabsTrigger value="favorites">Favorites</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="listings">Моите обяви</TabsTrigger>
+          <TabsTrigger value="favorites">Любими</TabsTrigger>
+          <TabsTrigger value="account">Профил</TabsTrigger>
         </TabsList>
 
         <TabsContent value="listings">
@@ -215,7 +194,7 @@ export default function Dashboard() {
                     <CardTitle>
                       {listing.brand} {listing.model}
                     </CardTitle>
-                    <CardDescription>${listing.price?.toLocaleString() || "Price not available"}</CardDescription>
+                    <CardDescription>{listing.price?.toLocaleString() || "Няма цена"} лв.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-video relative rounded-md overflow-hidden mb-2">
@@ -235,27 +214,24 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>Year: {listing.year || "N/A"}</p>
-                      <p>Mileage: {listing.mileage?.toLocaleString() || "N/A"} mi</p>
-                      <p>Status: {listing.isVisible ? "Active" : "Hidden"}</p>
+                      <p>Година: {listing.year || "–"}</p>
+                      <p>Пробег: {listing.mileage?.toLocaleString() || "–"} км</p>
+                      <p>Статус: {listing.isVisible ? "Активна" : "Скрита"}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <Link href={`/cars/${listing.id}`}>
                       <Button variant="outline" size="sm">
-                        <Eye className="mr-1 h-4 w-4" />
-                        View
+                        <Eye className="mr-1 h-4 w-4" /> Преглед
                       </Button>
                     </Link>
                     <Link href={`/listings/edit/${listing.id}`}>
                       <Button variant="outline" size="sm">
-                        <Edit className="mr-1 h-4 w-4" />
-                        Edit
+                        <Edit className="mr-1 h-4 w-4" /> Редактирай
                       </Button>
                     </Link>
                     <Button variant="outline" size="sm" onClick={() => handleDeleteListing(listing.id)}>
-                      <Trash className="mr-1 h-4 w-4" />
-                      Delete
+                      <Trash className="mr-1 h-4 w-4" /> Изтрий
                     </Button>
                   </CardFooter>
                 </Card>
@@ -264,12 +240,11 @@ export default function Dashboard() {
           ) : (
             <div className="text-center py-12 border rounded-lg">
               <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium">No Listings Yet</h3>
-              <p className="text-muted-foreground mb-4">You haven't created any car listings yet.</p>
+              <h3 className="text-lg font-medium">Все още нямате обяви</h3>
+              <p className="text-muted-foreground mb-4">Добавете първата си автомобилна обява.</p>
               <Link href="/listings/create">
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Listing
+                  <Plus className="mr-2 h-4 w-4" /> Добави обява
                 </Button>
               </Link>
             </div>
@@ -289,7 +264,7 @@ export default function Dashboard() {
                     <CardTitle>
                       {car.brand} {car.model}
                     </CardTitle>
-                    <CardDescription>${car.price?.toLocaleString() || "Price not available"}</CardDescription>
+                    <CardDescription>{car.price?.toLocaleString() + " лв." || "Няма цена"}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-video relative rounded-md overflow-hidden mb-2">
@@ -313,16 +288,15 @@ export default function Dashboard() {
                       />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>Year: {car.year || "N/A"}</p>
-                      <p>Mileage: {car.mileage?.toLocaleString() || "N/A"} mi</p>
-                      <p>Condition: {car.condition || "N/A"}</p>
+                      <p>Година: {car.year || "–"}</p>
+                      <p>Пробег: {car.mileage?.toLocaleString() || "–"} км</p>
+                      <p>Състояние: {car.condition || "–"}</p>
                     </div>
                   </CardContent>
                   <CardFooter>
                     <Link href={`/cars/${car.id}`} className="w-full">
                       <Button variant="outline" className="w-full">
-                        <Eye className="mr-1 h-4 w-4" />
-                        View Details
+                        <Eye className="mr-1 h-4 w-4" /> Виж детайли
                       </Button>
                     </Link>
                   </CardFooter>
@@ -332,43 +306,17 @@ export default function Dashboard() {
           ) : (
             <div className="text-center py-12 border rounded-lg">
               <Star className="h-12 w-12 mx-auto mb-4 text-muted-foreground fill-none" />
-              <h3 className="text-lg font-medium">No Favorites Yet</h3>
-              <p className="text-muted-foreground mb-4">You haven't added any cars to your favorites yet.</p>
+              <h3 className="text-lg font-medium">Нямате любими</h3>
+              <p className="text-muted-foreground mb-4">Все още не сте добавили любими автомобили.</p>
               <Link href="/cars">
-                <Button>Browse Cars</Button>
+                <Button>Разгледай автомобили</Button>
               </Link>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="account">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-              <CardDescription>Manage your account details and preferences</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium">Name</h3>
-                  <p>{user.name || "Not provided"}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Email</h3>
-                  <p>{user.email || "Not provided"}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Member Since</h3>
-                  <p>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Not available"}</p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                Edit Profile
-              </Button>
-            </CardFooter>
-          </Card>
+          <ProfileEditForm />
         </TabsContent>
       </Tabs>
     </div>

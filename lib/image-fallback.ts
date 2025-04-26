@@ -1,10 +1,3 @@
-import { isPreviewEnvironment } from "./environment"
-
-/**
- * Get a fallback image URL for a car
- * @param car Car details for generating a relevant placeholder
- * @returns URL to a placeholder image
- */
 export function getCarPlaceholder(car: { brand?: string; model?: string } | null): string {
   const brand = car?.brand || "car"
   const model = car?.model || ""

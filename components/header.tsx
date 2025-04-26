@@ -21,23 +21,13 @@ export function Header() {
   const routes = [
     {
       href: "/",
-      label: "Home",
+      label: "Начало",
       active: pathname === "/",
     },
     {
       href: "/cars",
-      label: "Browse Cars",
+      label: "Каталог",
       active: pathname === "/cars",
-    },
-    {
-      href: "/about",
-      label: "About",
-      active: pathname === "/about",
-    },
-    {
-      href: "/contact",
-      label: "Contact",
-      active: pathname === "/contact",
     },
   ]
 
@@ -70,14 +60,13 @@ export function Header() {
               loading,
             })
             return loading ? (
-              // Show a subtle loading state
               <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
             ) : user ? (
               <>
                 <Link href="/listings/create" className="hidden md:block">
                   <Button variant="ghost" size="sm">
                     <Plus className="mr-2 h-4 w-4" />
-                    Добави оферта
+                    Добави обява
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -89,18 +78,18 @@ export function Header() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard" className="flex w-full">
-                        Моят акаунт
+                        Моят профил
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/listings/create" className="flex w-full">
-                        Добави оферта
+                        Добави обява
                       </Link>
                     </DropdownMenuItem>
                     {user.role === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin" className="flex w-full">
-                          Админски профил
+                          Админ панел
                         </Link>
                       </DropdownMenuItem>
                     )}
@@ -140,14 +129,14 @@ export function Header() {
                 {user ? (
                   <>
                     <Link href="/dashboard" className="text-sm font-medium">
-                      Моят акаунт
+                      Моят профил
                     </Link>
                     <Link href="/listings/create" className="text-sm font-medium">
-                      Добавете оферта
+                      Добави обява
                     </Link>
                     {user.role === "admin" && (
                       <Link href="/admin" className="text-sm font-medium">
-                        Админски профил
+                        Админ панел
                       </Link>
                     )}
                     <Button variant="ghost" onClick={() => signOut()}>

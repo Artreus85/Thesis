@@ -11,24 +11,29 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
+// First, import the PhoneInput component
+import { PhoneInput } from "@/components/phone-input"
 
 export default function RegisterPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  // Update the state to include phoneNumber
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
+  // Update the handleSubmit function to include phoneNumber
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
+        title: "Паролите не съвпадат",
+        description: "Моля, уверете се, че паролите съвпадат.",
         variant: "destructive",
       })
       return
@@ -37,29 +42,27 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await signUp(name, email, password)
+      await signUp(name, email, password, phoneNumber)
       toast({
-        title: "Registration successful",
-        description: "Welcome to CarMarket! You are now logged in.",
+        title: "Успешна регистрация",
+        description: "Добре дошли в CarMarket! Вече сте вписани.",
       })
-      // Redirect to home page instead of login page
       router.push("/")
     } catch (error: any) {
-      console.error("Registration error:", error)
+      console.error("Грешка при регистрация:", error)
 
-      // Provide more specific error messages based on Firebase error codes
-      let errorMessage = "There was an error creating your account. Please try again."
+      let errorMessage = "Възникна грешка при създаване на акаунт. Моля, опитайте отново."
 
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "This email is already registered. Please use a different email or try logging in."
+        errorMessage = "Този имейл вече е регистриран. Моля, използвайте друг или опитайте да влезете."
       } else if (error.code === "auth/weak-password") {
-        errorMessage = "Password is too weak. Please use a stronger password."
+        errorMessage = "Паролата е твърде слаба. Моля, използвайте по-силна парола."
       } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Invalid email address. Please check and try again."
+        errorMessage = "Невалиден имейл адрес. Моля, проверете и опитайте отново."
       }
 
       toast({
-        title: "Registration failed",
+        title: "Неуспешна регистрация",
         description: errorMessage,
         variant: "destructive",
       })
@@ -75,8 +78,8 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />
           </div>
-          <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-          <CardDescription className="text-center">Enter your information to create an account</CardDescription>
+          <CardTitle className="text-2xl text-center">Създай акаунт</CardTitle>
+          <CardDescription className="text-center">Въведете информация, за да създадете акаунт</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -85,32 +88,47 @@ export default function RegisterPage() {
                 htmlFor="name"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Name
+                Име
               </label>
-              <Input id="name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="name"
+                placeholder="Иван Иванов"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
+            {/* Add the PhoneInput component to the form after the email field */}
             <div className="space-y-2">
               <label
                 htmlFor="email"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Email
+                Имейл
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="ivan@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
+            <PhoneInput
+              value={phoneNumber}
+              onChange={setPhoneNumber}
+              required
+              label="Телефонен номер"
+              placeholder="+359 88 888 8888"
+            />
             <div className="space-y-2">
               <label
                 htmlFor="password"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Password
+                Парола
               </label>
               <Input
                 id="password"
@@ -125,7 +143,7 @@ export default function RegisterPage() {
                 htmlFor="confirm-password"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Confirm Password
+                Потвърди паролата
               </label>
               <Input
                 id="confirm-password"
@@ -138,12 +156,12 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
+              {isLoading ? "Създаване на акаунт..." : "Създай акаунт"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
+              Вече имаш акаунт?{" "}
               <Link href="/auth/login" className="text-primary hover:underline">
-                Sign in
+                Вход
               </Link>
             </div>
           </CardFooter>

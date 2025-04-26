@@ -1,8 +1,3 @@
-import { isPreviewEnvironment } from "./environment"
-
-/**
- * Generate a mock image URL for development and preview
- */
 export function getMockImageUrl(fileName: string): string {
   // Generate a deterministic but random-looking string based on the filename
   const hash = Array.from(fileName).reduce((acc, char) => {

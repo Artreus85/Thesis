@@ -42,7 +42,6 @@ export function SearchFilters() {
   const searchParams = useSearchParams()
   const currentYear = new Date().getFullYear()
 
-  // Initialize filter state from URL parameters
   const [filters, setFilters] = useState<FilterParams>({
     brand: searchParams.get("brand") || "",
     model: searchParams.get("model") || "",
@@ -58,13 +57,10 @@ export function SearchFilters() {
     query: searchParams.get("query") || "",
   })
 
-  // Track active filters count for the mobile filter button badge
   const [activeFiltersCount, setActiveFiltersCount] = useState<number>(0)
 
-  // Calculate active filters count whenever filters change
   useEffect(() => {
     const count = Object.entries(filters).reduce((acc, [key, value]) => {
-      // Don't count empty values or default values
       if (!value) return acc
       if (key === "minPrice" && value === "0") return acc
       if (key === "maxPrice" && value === "100000") return acc
@@ -78,19 +74,13 @@ export function SearchFilters() {
 
   const handleSearch = () => {
     const params = new URLSearchParams()
-
-    // Only add non-empty parameters and non-default values
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
-        // Skip default values
         if (key === "minPrice" && value === "0") return
         if (key === "maxPrice" && value === "100000") return
         if (key === "minYear" && value === "2000") return
         if (key === "maxYear" && value === currentYear.toString()) return
-
-        // Skip "any" values for select fields
         if (value === "any") return
-
         params.set(key, value)
       }
     })
@@ -135,7 +125,6 @@ export function SearchFilters() {
     }))
   }
 
-  // Filter badges for selected options
   const renderFilterBadges = () => {
     const badges = []
 
@@ -187,7 +176,7 @@ export function SearchFilters() {
     if (filters.gearbox && filters.gearbox !== "any") {
       badges.push(
         <Badge key="gearbox" variant="outline" className="flex items-center gap-1">
-          Скоростна кутия: {filters.gearbox}
+          Скорости: {filters.gearbox}
           <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange("gearbox", "")} />
         </Badge>,
       )
@@ -201,12 +190,12 @@ export function SearchFilters() {
     <div className="hidden lg:block bg-white p-6 rounded-lg shadow-sm border mb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Search</label>
+          <label className="text-sm font-medium">Търсене</label>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search cars..."
+              placeholder="Търсене на коли..."
               className="pl-8"
               value={filters.query}
               onChange={(e) => handleFilterChange("query", e.target.value)}
@@ -218,7 +207,7 @@ export function SearchFilters() {
           <label className="text-sm font-medium">Марка</label>
           <Select value={filters.brand} onValueChange={(value) => handleFilterChange("brand", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any brand" />
+              <SelectValue placeholder="Всички марки" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="any">Всички марки</SelectItem>
@@ -235,7 +224,7 @@ export function SearchFilters() {
           <label className="text-sm font-medium">Модел</label>
           <Input
             type="text"
-            placeholder="Any model"
+            placeholder="Всички модели"
             value={filters.model}
             onChange={(e) => handleFilterChange("model", e.target.value)}
           />
@@ -247,10 +236,10 @@ export function SearchFilters() {
           <label className="text-sm font-medium">Състояние</label>
           <Select value={filters.condition} onValueChange={(value) => handleFilterChange("condition", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any condition" />
+              <SelectValue placeholder="Всички състояния" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Всякакво състояние</SelectItem>
+              <SelectItem value="any">Всички състояния</SelectItem>
               {CONDITIONS.map((condition) => (
                 <SelectItem key={condition} value={condition}>
                   {condition}
@@ -261,13 +250,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Вид категория</label>
+          <label className="text-sm font-medium">Тип каросерия</label>
           <Select value={filters.bodyType} onValueChange={(value) => handleFilterChange("bodyType", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any body type" />
+              <SelectValue placeholder="Всички типове" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Всяка категория</SelectItem>
+              <SelectItem value="any">Всички типове</SelectItem>
               {BODY_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -278,13 +267,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Вид гориво</label>
+          <label className="text-sm font-medium">Гориво</label>
           <Select value={filters.fuel} onValueChange={(value) => handleFilterChange("fuel", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any fuel type" />
+              <SelectValue placeholder="Всички видове гориво" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Всеки вид гориво</SelectItem>
+              <SelectItem value="any">Всички видове гориво</SelectItem>
               {FUEL_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -298,10 +287,9 @@ export function SearchFilters() {
       <div className="grid grid-cols-2 gap-6 mb-4">
         <div className="space-y-2">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Price Range</label>
+            <label className="text-sm font-medium">Ценови диапазон</label>
             <span className="text-sm text-muted-foreground">
-              ${Number.parseInt(filters.minPrice).toLocaleString()} - $
-              {Number.parseInt(filters.maxPrice).toLocaleString()}
+              {filters.minPrice} лв. – {filters.maxPrice} лв.
             </span>
           </div>
           <Slider
@@ -315,9 +303,9 @@ export function SearchFilters() {
 
         <div className="space-y-2">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Year Range</label>
+            <label className="text-sm font-medium">Години</label>
             <span className="text-sm text-muted-foreground">
-              {filters.minYear} - {filters.maxYear}
+              {filters.minYear} – {filters.maxYear}
             </span>
           </div>
           <Slider
@@ -332,13 +320,13 @@ export function SearchFilters() {
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Gearbox</label>
+          <label className="text-sm font-medium">Скорости</label>
           <Select value={filters.gearbox} onValueChange={(value) => handleFilterChange("gearbox", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any gearbox type" />
+              <SelectValue placeholder="Всички скоростни кутии" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any gearbox type</SelectItem>
+              <SelectItem value="any">Всички скоростни кутии</SelectItem>
               {GEARBOX_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -349,13 +337,13 @@ export function SearchFilters() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Drive Type</label>
+          <label className="text-sm font-medium">Задвижване</label>
           <Select value={filters.driveType} onValueChange={(value) => handleFilterChange("driveType", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any drive type" />
+              <SelectValue placeholder="Всички типове задвижване" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="any">Any drive type</SelectItem>
+              <SelectItem value="any">Всички типове задвижване</SelectItem>
               {DRIVE_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -366,22 +354,21 @@ export function SearchFilters() {
         </div>
       </div>
 
-      {/* Filter badges */}
       {renderFilterBadges().length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {renderFilterBadges()}
           <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs">
-            Clear All
+            Изчисти всички
           </Button>
         </div>
       )}
 
       <div className="flex gap-2">
         <Button onClick={handleSearch} className="flex-1">
-          Search Cars
+          Търси коли
         </Button>
         <Button variant="outline" onClick={handleReset}>
-          Reset
+          Нулирай
         </Button>
       </div>
     </div>
@@ -395,7 +382,7 @@ export function SearchFilters() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search cars..."
+            placeholder="Търсене на коли..."
             className="pl-8"
             value={filters.query}
             onChange={(e) => handleFilterChange("query", e.target.value)}
@@ -406,7 +393,7 @@ export function SearchFilters() {
           <SheetTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" />
-              Filters
+              Филтри
               {activeFiltersCount > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1 text-xs">
                   {activeFiltersCount}
@@ -416,24 +403,24 @@ export function SearchFilters() {
           </SheetTrigger>
           <SheetContent className="overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>Filter Cars</SheetTitle>
-              <SheetDescription>Narrow down your search with these filters</SheetDescription>
+              <SheetTitle>Филтрирай коли</SheetTitle>
+              <SheetDescription>Стесни търсенето си с помощта на филтри</SheetDescription>
             </SheetHeader>
 
             <div className="py-4">
               <Accordion type="single" collapsible className="w-full" defaultValue="brand">
                 <AccordionItem value="brand">
-                  <AccordionTrigger>Brand & Model</AccordionTrigger>
+                  <AccordionTrigger>Марка и модел</AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Brand</Label>
+                        <Label>Марка</Label>
                         <Select value={filters.brand} onValueChange={(value) => handleFilterChange("brand", value)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Any brand" />
+                            <SelectValue placeholder="Всички марки" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any brand</SelectItem>
+                            <SelectItem value="any">Всички марки</SelectItem>
                             {CAR_BRANDS.map((brand) => (
                               <SelectItem key={brand} value={brand}>
                                 {brand}
@@ -444,10 +431,10 @@ export function SearchFilters() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Model</Label>
+                        <Label>Модел</Label>
                         <Input
                           type="text"
-                          placeholder="Any model"
+                          placeholder="Всички модели"
                           value={filters.model}
                           onChange={(e) => handleFilterChange("model", e.target.value)}
                         />
@@ -457,13 +444,13 @@ export function SearchFilters() {
                 </AccordionItem>
 
                 <AccordionItem value="price">
-                  <AccordionTrigger>Price Range</AccordionTrigger>
+                  <AccordionTrigger>Ценови диапазон</AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">
-                          ${Number.parseInt(filters.minPrice).toLocaleString()} - $
-                          {Number.parseInt(filters.maxPrice).toLocaleString()}
+                          {Number.parseInt(filters.minPrice).toLocaleString()} лв. –{" "}
+                          {Number.parseInt(filters.maxPrice).toLocaleString()} лв.
                         </span>
                       </div>
                       <Slider
@@ -478,12 +465,12 @@ export function SearchFilters() {
                 </AccordionItem>
 
                 <AccordionItem value="year">
-                  <AccordionTrigger>Year Range</AccordionTrigger>
+                  <AccordionTrigger>Години</AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">
-                          {filters.minYear} - {filters.maxYear}
+                          {filters.minYear} – {filters.maxYear}
                         </span>
                       </div>
                       <Slider
@@ -498,20 +485,20 @@ export function SearchFilters() {
                 </AccordionItem>
 
                 <AccordionItem value="vehicle">
-                  <AccordionTrigger>Vehicle Details</AccordionTrigger>
+                  <AccordionTrigger>Детайли за автомобила</AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Condition</Label>
+                        <Label>Състояние</Label>
                         <Select
                           value={filters.condition}
                           onValueChange={(value) => handleFilterChange("condition", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Any condition" />
+                            <SelectValue placeholder="Всички състояния" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any condition</SelectItem>
+                            <SelectItem value="any">Всички състояния</SelectItem>
                             {CONDITIONS.map((condition) => (
                               <SelectItem key={condition} value={condition}>
                                 {condition}
@@ -522,16 +509,16 @@ export function SearchFilters() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Body Type</Label>
+                        <Label>Каросерия</Label>
                         <Select
                           value={filters.bodyType}
                           onValueChange={(value) => handleFilterChange("bodyType", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Any body type" />
+                            <SelectValue placeholder="Всички типове каросерия" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any body type</SelectItem>
+                            <SelectItem value="any">Всички типове каросерия</SelectItem>
                             {BODY_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type}
@@ -542,13 +529,13 @@ export function SearchFilters() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Fuel Type</Label>
+                        <Label>Гориво</Label>
                         <Select value={filters.fuel} onValueChange={(value) => handleFilterChange("fuel", value)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Any fuel type" />
+                            <SelectValue placeholder="Всички видове гориво" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any fuel type</SelectItem>
+                            <SelectItem value="any">Всички видове гориво</SelectItem>
                             {FUEL_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type}
@@ -559,13 +546,13 @@ export function SearchFilters() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Gearbox</Label>
+                        <Label>Скорости</Label>
                         <Select value={filters.gearbox} onValueChange={(value) => handleFilterChange("gearbox", value)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Any gearbox type" />
+                            <SelectValue placeholder="Всички скоростни кутии" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any gearbox type</SelectItem>
+                            <SelectItem value="any">Всички скоростни кутии</SelectItem>
                             {GEARBOX_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type}
@@ -576,16 +563,16 @@ export function SearchFilters() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Drive Type</Label>
+                        <Label>Задвижване</Label>
                         <Select
                           value={filters.driveType}
                           onValueChange={(value) => handleFilterChange("driveType", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Any drive type" />
+                            <SelectValue placeholder="Всички типове задвижване" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="any">Any drive type</SelectItem>
+                            <SelectItem value="any">Всички типове задвижване</SelectItem>
                             {DRIVE_TYPES.map((type) => (
                               <SelectItem key={type} value={type}>
                                 {type}
@@ -603,12 +590,12 @@ export function SearchFilters() {
             <SheetFooter className="flex-col gap-2 sm:flex-col">
               <SheetClose asChild>
                 <Button onClick={handleSearch} className="w-full">
-                  Apply Filters
+                  Приложи филтрите
                 </Button>
               </SheetClose>
 
               <Button variant="outline" onClick={handleReset} className="w-full">
-                Reset Filters
+                Нулирай филтрите
               </Button>
             </SheetFooter>
           </SheetContent>
@@ -619,12 +606,11 @@ export function SearchFilters() {
         </Button>
       </div>
 
-      {/* Filter badges for mobile */}
       {renderFilterBadges().length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {renderFilterBadges()}
           <Button variant="ghost" size="sm" onClick={handleReset} className="h-6 text-xs">
-            Clear All
+            Изчисти всички
           </Button>
         </div>
       )}

@@ -34,34 +34,31 @@ export default function LoginPage() {
     try {
       await signIn(email, password)
       toast({
-        title: "Login successful",
-        description: "Welcome back to CarMarket!",
+        title: "Успешен вход",
+        description: "Добре дошли обратно в CarMarket!",
       })
 
-      // Check if there's a redirect URL in the query params
       const redirectUrl = getRedirectUrl()
       if (redirectUrl) {
         router.push(redirectUrl)
       } else {
-        // Otherwise redirect to home page
         router.push("/")
       }
     } catch (error: any) {
-      console.error("Login error:", error)
+      console.error("Грешка при вход:", error)
 
-      // Provide more specific error messages based on Firebase error codes
-      let errorMessage = "Invalid email or password. Please try again."
+      let errorMessage = "Невалиден имейл или парола. Опитайте отново."
 
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        errorMessage = "Invalid email or password. Please try again."
+        errorMessage = "Невалиден имейл или парола. Опитайте отново."
       } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many failed login attempts. Please try again later."
+        errorMessage = "Твърде много неуспешни опити. Опитайте по-късно."
       } else if (error.code === "auth/user-disabled") {
-        errorMessage = "This account has been disabled. Please contact support."
+        errorMessage = "Акаунтът е деактивиран. Свържете се с поддръжката."
       }
 
       toast({
-        title: "Login failed",
+        title: "Неуспешен вход",
         description: errorMessage,
         variant: "destructive",
       })
@@ -78,9 +75,7 @@ export default function LoginPage() {
             <Car className="h-10 w-10" />
           </div>
           <CardTitle className="text-2xl text-center">Вход</CardTitle>
-          <CardDescription className="text-center">
-            Въведете имейла и паролата си, за да влезете в акаунта си.
-          </CardDescription>
+          <CardDescription className="text-center">Въведете имейл и парола, за да влезете в акаунта си</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -123,12 +118,12 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Влизане..." : "Влез"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Нямате профил{" "}
+              Нямате акаунт?{" "}
               <Link href="/auth/register" className="text-primary hover:underline">
-                Регистрирайте се
+                Регистрирай се
               </Link>
             </div>
           </CardFooter>

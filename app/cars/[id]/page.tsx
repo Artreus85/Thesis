@@ -1,9 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { Calendar, Fuel, Gauge, Mail, Phone, Share2, User, Car, Wrench, DoorOpen, FileText } from "lucide-react"
+import { Calendar, Fuel, Gauge, Mail, Phone, Share2, User, Car, Wrench, DoorOpen, FileText, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { FavoriteButton } from "@/components/favorite-button"
+
+// Import the necessary components
+import { useAuth } from "@/lib/auth"
 
 export default function CarDetailPage() {
   const params = useParams()
@@ -20,10 +25,12 @@ export default function CarDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Add the useAuth hook to get the current user
+  const { user } = useAuth()
+
   useEffect(() => {
     async function fetchData() {
       try {
-        // Dynamically import to prevent build errors
         const { getCarById, getUserById } = await import("@/lib/firebase")
         const carData = await getCarById(params.id as string)
 
@@ -32,12 +39,12 @@ export default function CarDetailPage() {
           const sellerData = await getUserById(carData.userId)
           setSeller(sellerData)
         } else {
-          setError("Car not found")
+          setError("Автомобилът не е намерен")
           router.push("/404")
         }
       } catch (error) {
-        console.error("Error fetching car details:", error)
-        setError("Failed to load car details")
+        console.error("Грешка при зареждане на данните:", error)
+        setError("Неуспешно зареждане на детайли за автомобила")
       } finally {
         setLoading(false)
       }
@@ -73,24 +80,19 @@ export default function CarDetailPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Грешка</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
         <div className="flex justify-center mt-6">
-          <Button onClick={() => router.push("/cars")}>Browse Other Cars</Button>
+          <Button onClick={() => router.push("/cars")}>Разгледай други коли</Button>
         </div>
       </div>
     )
   }
 
-  if (!car) {
-    return null
-  }
+  if (!car) return null
 
-  // Ensure car has images array
   const images = car.images || []
-
-  // Format features as an array if it exists
   const features = car.features ? car.features.split(",").map((f: string) => f.trim()) : []
 
   return (
@@ -104,7 +106,7 @@ export default function CarDetailPage() {
               fill
               className="object-cover"
               priority
-              unoptimized // Use this for external URLs
+              unoptimized
             />
             <Badge className="absolute left-4 top-4 text-sm">{car.condition}</Badge>
             <FavoriteButton
@@ -118,10 +120,10 @@ export default function CarDetailPage() {
               <div key={index} className="relative aspect-video overflow-hidden rounded-lg">
                 <Image
                   src={image || "/placeholder.svg?height=600&width=800&query=car"}
-                  alt={`${car.brand} ${car.model} - Image ${index + 1}`}
+                  alt={`${car.brand} ${car.model} - Снимка ${index + 1}`}
                   fill
                   className="object-cover"
-                  unoptimized // Use this for external URLs
+                  unoptimized
                 />
               </div>
             ))}
@@ -129,159 +131,80 @@ export default function CarDetailPage() {
 
           <Tabs defaultValue="details">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="specs">Specifications</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="details">Детайли</TabsTrigger>
+              <TabsTrigger value="specs">Спецификации</TabsTrigger>
+              <TabsTrigger value="features">Екстри</TabsTrigger>
+              <TabsTrigger value="description">Описание</TabsTrigger>
             </TabsList>
+
             <TabsContent value="details" className="p-4 border rounded-lg mt-2">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Brand</h3>
-                  <p>{car.brand || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Model</h3>
-                  <p>{car.model || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Year</h3>
-                  <p>{car.year || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Mileage</h3>
-                  <p>{car.mileage?.toLocaleString() || "N/A"} mi</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Fuel Type</h3>
-                  <p>{car.fuel || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Gearbox</h3>
-                  <p>{car.gearbox || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Power</h3>
-                  <p>{car.power || "N/A"} hp</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Condition</h3>
-                  <p>{car.condition || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Body Type</h3>
-                  <p>{car.bodyType || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Drive Type</h3>
-                  <p>{car.driveType || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Color</h3>
-                  <p>{car.color || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Doors</h3>
-                  <p>{car.doors || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Seats</h3>
-                  <p>{car.seats || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Engine Size</h3>
-                  <p>{car.engineSize || "N/A"} L</p>
-                </div>
-                {car.vin && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">VIN</h3>
-                    <p>{car.vin}</p>
-                  </div>
-                )}
-                {car.licensePlate && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">License Plate</h3>
-                    <p>{car.licensePlate}</p>
-                  </div>
-                )}
+                <Item label="Марка" value={car.brand} />
+                <Item label="Модел" value={car.model} />
+                <Item label="Година" value={car.year} />
+                <Item label="Пробег" value={`${car.mileage?.toLocaleString() || "N/A"} км`} />
+                <Item label="Гориво" value={car.fuel} />
+                <Item label="Скорости" value={car.gearbox} />
+                <Item label="Мощност" value={`${car.power} к.с.`} />
+                <Item label="Състояние" value={car.condition} />
+                <Item label="Каросерия" value={car.bodyType} />
+                <Item label="Задвижване" value={car.driveType} />
+                <Item label="Цвят" value={car.color} />
+                <Item label="Врати" value={car.doors} />
+                <Item label="Седалки" value={car.seats} />
+                <Item label="Обем на двигателя" value={`${car.engineSize} л`} />
+                {car.vin && <Item label="VIN" value={car.vin} />}
+                {car.licensePlate && <Item label="Рег. номер" value={car.licensePlate} />}
               </div>
             </TabsContent>
+
             <TabsContent value="specs" className="p-4 border rounded-lg mt-2">
-              <div className="space-y-6">
-                <div className="flex items-start gap-3">
-                  <Car className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Vehicle</h3>
-                    <p className="text-muted-foreground">
-                      {car.year} {car.brand} {car.model}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {car.bodyType} • {car.color} • {car.condition}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Wrench className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Engine & Performance</h3>
-                    <p className="text-muted-foreground">
-                      {car.engineSize} L • {car.power} hp • {car.fuel}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {car.gearbox} • {car.driveType}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <DoorOpen className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Capacity</h3>
-                    <p className="text-muted-foreground">
-                      {car.doors} doors • {car.seats} seats
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Gauge className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Mileage</h3>
-                    <p className="text-muted-foreground">{car.mileage?.toLocaleString() || "N/A"} miles</p>
-                  </div>
-                </div>
-
-                {car.vin && (
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Vehicle Identification</h3>
-                      <p className="text-muted-foreground">
-                        VIN: {car.vin}
-                        {car.licensePlate && <> • License: {car.licensePlate}</>}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <SpecBlock
+                icon={<Car className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                title="Автомобил"
+                lines={[`${car.year} ${car.brand} ${car.model}`, `${car.bodyType} • ${car.color} • ${car.condition}`]}
+              />
+              <SpecBlock
+                icon={<Wrench className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                title="Двигател и представяне"
+                lines={[`${car.engineSize} л • ${car.power} к.с. • ${car.fuel}`, `${car.gearbox} • ${car.driveType}`]}
+              />
+              <SpecBlock
+                icon={<DoorOpen className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                title="Капацитет"
+                lines={[`${car.doors} врати • ${car.seats} места`]}
+              />
+              <SpecBlock
+                icon={<Gauge className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                title="Пробег"
+                lines={[`${car.mileage?.toLocaleString() || "N/A"} км`]}
+              />
+              {car.vin && (
+                <SpecBlock
+                  icon={<FileText className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                  title="Идентификация"
+                  lines={[`VIN: ${car.vin}`, car.licensePlate ? `Рег. номер: ${car.licensePlate}` : ""]}
+                />
+              )}
             </TabsContent>
+
             <TabsContent value="features" className="p-4 border rounded-lg mt-2">
               {features.length > 0 ? (
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {features.map((feature: string, index: number) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                  {features.map((feature: any, i: any) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-muted-foreground">No features listed for this vehicle.</p>
+                <p className="text-muted-foreground">Няма добавени екстри за този автомобил.</p>
               )}
             </TabsContent>
+
             <TabsContent value="description" className="p-4 border rounded-lg mt-2">
-              <p className="whitespace-pre-line">{car.description || "No description available"}</p>
+              <p className="whitespace-pre-line">{car.description || "Няма описание"}</p>
             </TabsContent>
           </Tabs>
         </div>
@@ -298,7 +221,7 @@ export default function CarDetailPage() {
                   <span>{car.year || "N/A"}</span>
                   <Separator orientation="vertical" className="h-4" />
                   <Gauge className="h-4 w-4" />
-                  <span>{car.mileage?.toLocaleString() || "N/A"} mi</span>
+                  <span>{car.mileage?.toLocaleString() || "N/A"} км</span>
                   <Separator orientation="vertical" className="h-4" />
                   <Fuel className="h-4 w-4" />
                   <span>{car.fuel || "N/A"}</span>
@@ -306,18 +229,7 @@ export default function CarDetailPage() {
               </div>
 
               <div className="mb-6">
-                <div className="text-3xl font-bold">${car.price?.toLocaleString() || "N/A"}</div>
-              </div>
-
-              <div className="space-y-3">
-                <Button className="w-full">Contact Seller</Button>
-                <div className="flex gap-2">
-                  <FavoriteButton carId={car.id} variant="outline" className="flex-1" showText={true} />
-                  <Button variant="outline" className="flex-1">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
-                  </Button>
-                </div>
+                <div className="text-3xl font-bold">{car.price ? `${car.price.toLocaleString()} лв.` : "N/A"}</div>
               </div>
             </div>
 
@@ -327,26 +239,55 @@ export default function CarDetailPage() {
                   <User className="absolute inset-0 h-full w-full p-2" />
                 </div>
                 <div>
-                  <h3 className="font-medium">{seller?.name || "Seller"}</h3>
+                  <h3 className="font-medium">{seller?.name || "Продавач"}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Member since {new Date(seller?.createdAt || Date.now()).getFullYear()}
+                    Потребител от {new Date(seller?.createdAt || Date.now()).getFullYear()}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Button variant="outline" className="w-full">
-                  <Phone className="mr-2 h-4 w-4" />
-                  Show Phone Number
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Message
-                </Button>
+                {seller?.phoneNumber ? (
+                  <Button variant="outline" className="w-full">
+                    <Phone className="mr-2 h-4 w-4" />
+                    {user ? seller.phoneNumber : "Влезте, за да видите"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full" disabled>
+                    <Lock className="mr-2 h-4 w-4" />
+                    Няма телефон
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Помощни компоненти
+function Item({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
+      <p>{value || "N/A"}</p>
+    </div>
+  )
+}
+
+function SpecBlock({ icon, title, lines }: { icon: React.ReactNode; title: string; lines: string[] }) {
+  return (
+    <div className="flex items-start gap-3">
+      {icon}
+      <div>
+        <h3 className="font-medium">{title}</h3>
+        {lines.map((line, i) => (
+          <p key={i} className="text-muted-foreground">
+            {line}
+          </p>
+        ))}
       </div>
     </div>
   )

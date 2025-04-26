@@ -23,43 +23,37 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Use an effect to check authentication and redirect if needed
   useEffect(() => {
-    // Only proceed when auth state is no longer loading
     if (!authLoading) {
       if (!user) {
-        console.log("No user found, redirecting from admin page")
+        console.log("Няма потребител, пренасочване...")
         router.push("/auth/login")
         return
       } else if (user.role !== "admin") {
-        console.log("User is not admin, redirecting from admin page")
+        console.log("Потребителят не е администратор, пренасочване...")
         router.push("/")
         return
       }
     }
   }, [user, authLoading, router])
 
-  // Separate effect for data fetching that only runs when user is confirmed admin
   useEffect(() => {
-    // Only fetch data when we have a confirmed admin user
     if (!authLoading && user && user.role === "admin") {
       const fetchData = async () => {
         try {
-          console.log("Fetching admin data as user:", user.id)
+          console.log("Зареждане на данни като администратор:", user.id)
           setIsLoading(true)
 
-          // Fetch data in parallel
           const [usersData, listingsData] = await Promise.all([getAllUsers(), getAllListings()])
-
           setUsers(usersData)
           setListings(listingsData)
-          console.log(`Fetched ${usersData.length} users and ${listingsData.length} listings`)
+          console.log(`Заредени са ${usersData.length} потребители и ${listingsData.length} обяви`)
         } catch (error) {
-          console.error("Error fetching admin data:", error)
-          setError("Failed to load admin data. Please try again.")
+          console.error("Грешка при зареждане:", error)
+          setError("Неуспешно зареждане на админ данни. Опитайте отново.")
           toast({
-            title: "Error",
-            description: "Failed to load admin data",
+            title: "Грешка",
+            description: "Неуспешно зареждане на админ панел",
             variant: "destructive",
           })
         } finally {
@@ -72,19 +66,19 @@ export default function AdminPage() {
   }, [user, authLoading, toast])
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    if (window.confirm("Сигурни ли сте, че искате да изтриете този потребител?")) {
       try {
         await deleteUser(userId)
         setUsers(users.filter((u) => u.id !== userId))
         toast({
-          title: "User deleted",
-          description: "The user has been deleted successfully",
+          title: "Потребителят е изтрит",
+          description: "Потребителят беше успешно изтрит",
         })
       } catch (error) {
-        console.error("Error deleting user:", error)
+        console.error("Грешка при изтриване:", error)
         toast({
-          title: "Error",
-          description: "Failed to delete user",
+          title: "Грешка",
+          description: "Неуспешно изтриване на потребител",
           variant: "destructive",
         })
       }
@@ -92,19 +86,19 @@ export default function AdminPage() {
   }
 
   const handleDeleteListing = async (listingId: string) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
+    if (window.confirm("Сигурни ли сте, че искате да изтриете тази обява?")) {
       try {
         await deleteListing(listingId)
         setListings(listings.filter((l) => l.id !== listingId))
         toast({
-          title: "Listing deleted",
-          description: "The listing has been deleted successfully",
+          title: "Обявата е изтрита",
+          description: "Обявата беше успешно изтрита",
         })
       } catch (error) {
-        console.error("Error deleting listing:", error)
+        console.error("Грешка при изтриване:", error)
         toast({
-          title: "Error",
-          description: "Failed to delete listing",
+          title: "Грешка",
+          description: "Неуспешно изтриване на обява",
           variant: "destructive",
         })
       }
@@ -116,20 +110,19 @@ export default function AdminPage() {
       await toggleListingVisibility(listingId, !isVisible)
       setListings(listings.map((l) => (l.id === listingId ? { ...l, isVisible: !isVisible } : l)))
       toast({
-        title: isVisible ? "Listing hidden" : "Listing visible",
-        description: `The listing is now ${isVisible ? "hidden" : "visible"}`,
+        title: isVisible ? "Обявата е скрита" : "Обявата е видима",
+        description: `Обявата вече е ${isVisible ? "скрита" : "видима"}`,
       })
     } catch (error) {
-      console.error("Error toggling visibility:", error)
+      console.error("Грешка при промяна на видимостта:", error)
       toast({
-        title: "Error",
-        description: "Failed to update listing visibility",
+        title: "Грешка",
+        description: "Неуспешна промяна на видимостта",
         variant: "destructive",
       })
     }
   }
 
-  // Show loading state
   if (authLoading || isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-96">
@@ -138,37 +131,33 @@ export default function AdminPage() {
     )
   }
 
-  // Show access denied if not admin
   if (!user || user.role !== "admin") {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            You do not have permission to access the admin panel. Please log in with an admin account.
-          </AlertDescription>
+          <AlertTitle>Достъп отказан</AlertTitle>
+          <AlertDescription>Нямате достъп до админ панела. Моля, влезте с администраторски акаунт.</AlertDescription>
         </Alert>
 
         <div className="flex justify-center mt-8">
-          <Button onClick={() => router.push("/auth/login")}>Go to Login</Button>
+          <Button onClick={() => router.push("/auth/login")}>Вход</Button>
         </div>
       </div>
     )
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Грешка</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
 
         <div className="flex justify-center mt-8">
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Button onClick={() => window.location.reload()}>Опитай отново</Button>
         </div>
       </div>
     )
@@ -178,21 +167,21 @@ export default function AdminPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">Админ Панел</h1>
           <p className="text-muted-foreground">
-            Logged in as <span className="font-medium">{user.name}</span> ({user.email})
+            Вписан като <span className="font-medium">{user.name}</span> ({user.email})
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
-          <span className="font-medium">Admin Access</span>
+          <span className="font-medium">Администратор</span>
         </div>
       </div>
 
       <Tabs defaultValue="listings">
         <TabsList className="mb-6">
-          <TabsTrigger value="listings">Listings</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="listings">Обяви</TabsTrigger>
+          <TabsTrigger value="users">Потребители</TabsTrigger>
         </TabsList>
 
         <TabsContent value="listings">
@@ -201,12 +190,12 @@ export default function AdminPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Car</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Seller</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Автомобил</TableHead>
+                  <TableHead>Цена</TableHead>
+                  <TableHead>Продавач</TableHead>
+                  <TableHead>Статус</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,7 +206,7 @@ export default function AdminPage() {
                       <TableCell>
                         {listing.brand} {listing.model}
                       </TableCell>
-                      <TableCell>${listing.price.toLocaleString()}</TableCell>
+                      <TableCell>{listing.price.toLocaleString()} лв.</TableCell>
                       <TableCell>{listing.userId.substring(0, 8)}...</TableCell>
                       <TableCell>
                         <span
@@ -225,7 +214,7 @@ export default function AdminPage() {
                             listing.isVisible ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {listing.isVisible ? "Visible" : "Hidden"}
+                          {listing.isVisible ? "Видима" : "Скрита"}
                         </span>
                       </TableCell>
                       <TableCell>{new Date(listing.createdAt).toLocaleDateString()}</TableCell>
@@ -234,31 +223,31 @@ export default function AdminPage() {
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
+                              <span className="sr-only">Действия</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Link href={`/cars/${listing.id}`} className="flex w-full items-center">
                                 <Eye className="mr-2 h-4 w-4" />
-                                View
+                                Преглед
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Link href={`/listings/edit/${listing.id}`} className="flex w-full items-center">
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit
+                                Редактирай
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleToggleVisibility(listing.id, listing.isVisible || false)}
                             >
                               <Eye className="mr-2 h-4 w-4" />
-                              {listing.isVisible ? "Hide" : "Show"}
+                              {listing.isVisible ? "Скрий" : "Покажи"}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteListing(listing.id)}>
                               <Trash className="mr-2 h-4 w-4" />
-                              Delete
+                              Изтрий
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -268,7 +257,7 @@ export default function AdminPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-6">
-                      No listings found
+                      Няма намерени обяви
                     </TableCell>
                   </TableRow>
                 )}
@@ -283,11 +272,11 @@ export default function AdminPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Име</TableHead>
+                  <TableHead>Имейл</TableHead>
+                  <TableHead>Роля</TableHead>
+                  <TableHead>Присъединяване</TableHead>
+                  <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -312,25 +301,25 @@ export default function AdminPage() {
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
+                              <span className="sr-only">Действия</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Link href={`/admin/users/${user.id}`} className="flex w-full items-center">
                                 <Eye className="mr-2 h-4 w-4" />
-                                View
+                                Преглед
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Link href={`/admin/users/edit/${user.id}`} className="flex w-full items-center">
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit
+                                Редактирай
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
                               <Trash className="mr-2 h-4 w-4" />
-                              Delete
+                              Изтрий
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -340,7 +329,7 @@ export default function AdminPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-6">
-                      No users found
+                      Няма намерени потребители
                     </TableCell>
                   </TableRow>
                 )}

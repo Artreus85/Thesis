@@ -13,24 +13,19 @@ export default function Home() {
   useEffect(() => {
     async function fetchCars() {
       try {
-        // Dynamically import to prevent build errors
         const { getFilteredCars } = await import("@/lib/firebase")
-        console.log("Fetching car listings for homepage...")
+        console.log("Извличане на обяви за началната страница...")
 
-        // Get featured cars for homepage (newer first, limit to 8)
         const params = {
-          // Empty params to get all visible cars
-          // The sorting by createdAt desc is handled in the getFilteredCars function
+          // Празни параметри за извличане на всички публични коли
         }
 
         const result = await getFilteredCars(params)
 
-        // Take just the first 8 cars
         setCars(result.slice(0, 8))
-        console.log(`Fetched ${result.length} car listings for homepage, showing 8`)
+        console.log(`Извлечени са ${result.length} обяви, показваме 8`)
       } catch (error) {
-        console.error("Error fetching car listings:", error)
-        // Provide fallback data if fetch fails
+        console.error("Грешка при зареждане на обявите:", error)
         setCars([])
       } finally {
         setLoading(false)
@@ -47,19 +42,19 @@ export default function Home() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-                Намерете перфектната кола за вас
+                Намери перфектната кола за теб
               </h1>
               <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
-                Browse thousands of cars from trusted sellers. Find the perfect match for your needs and budget.
+                Разгледай хиляди обяви от проверени продавачи. Намери идеалния автомобил за твоите нужди и бюджет.
               </p>
             </div>
             <div className="space-x-4">
               <Link href="/cars">
-                <Button size="lg">Каталог</Button>
+                <Button size="lg">Разгледай обяви</Button>
               </Link>
               <Link href="/listings/create">
                 <Button variant="outline" size="lg">
-                  Пуснете колата си за продажба
+                  Продай колата си
                 </Button>
               </Link>
             </div>
@@ -71,9 +66,9 @@ export default function Home() {
 
       <section className="py-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Налични оферти</h2>
+          <h2 className="text-2xl font-bold">Препоръчани обяви</h2>
           <Link href="/cars">
-            <Button variant="ghost">Виж всички оферти</Button>
+            <Button variant="ghost">Виж всички</Button>
           </Link>
         </div>
 
@@ -89,10 +84,10 @@ export default function Home() {
               cars.map((car) => <CarCard key={car.id} car={car} />)
             ) : (
               <div className="col-span-full text-center py-12">
-                <h3 className="text-lg font-medium">Няма налични оферти</h3>
-                { /*<p className="text-muted-foreground">Be the first to add a car listing!</p> */ }
+                <h3 className="text-lg font-medium">Няма налични обяви</h3>
+                <p className="text-muted-foreground">Бъди първият, който ще публикува обява!</p>
                 <Link href="/listings/create" className="mt-4 inline-block">
-                  <Button>Добави оферта</Button>
+                  <Button>Добави обява</Button>
                 </Link>
               </div>
             )}

@@ -4,15 +4,13 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Providers } from "./providers"
-import { Toaster } from "@/components/ui/toaster"
+import { ProvidersWrapper } from "./providers-wrapper" // <--- new client component
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CarMarket - Find Your Perfect Car",
-  description: "Browse and sell cars on our trusted marketplace",
-  generator: "v0.dev",
+  title: "CarMarket - Намери перфектната кола",
+  description: "Разгледай и продавай автомобили на нашия надежден пазар",
 }
 
 export default function RootLayout({
@@ -21,16 +19,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="bg" className="light" style={{ colorScheme: "light" }}>
       <body className={inter.className}>
-        <Providers>
+        <ProvidersWrapper>
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <Toaster />
-        </Providers>
+        </ProvidersWrapper>
       </body>
     </html>
   )

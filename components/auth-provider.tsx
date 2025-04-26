@@ -5,7 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { onAuthStateChanged, getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
 import { getFirestore, doc, getDoc } from "firebase/firestore"
-import { signIn as firebaseSignIn, signOut as firebaseSignOut, signUp as firebaseSignUp } from "@/lib/firebase"
+import { signIn as firebaseSignIn, signOut as firebaseSignOut, signUp as firebaseSignUp, updateUserProfile as firebaseUpdateUserProfile} from "@/lib/firebase"
 import { handleFirestoreError, enableOfflinePersistence } from "@/lib/firebase-error-handler"
 import type { User } from "@/lib/types"
 
@@ -17,7 +17,11 @@ interface AuthContextType {
   loading: boolean
   connectionBlocked: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (name: string, email: string, password: string) => Promise<void>
+  signUp: (name: string, email: string, password: string, phoneNumber: string) => Promise<void>
+  updateUserProfile: (
+    userId: string,
+    data: { name?: string; phoneNumber?: string }
+  ) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -28,6 +32,7 @@ export const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   signUp: async () => {},
   signOut: async () => {},
+  updateUserProfile: async () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -88,16 +93,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const userDocRef = doc(db, "users", firebaseUser.uid)
               const userDocSnap = await getDoc(userDocRef)
 
+              // Update the user state setting in the auth state listener
               if (userDocSnap.exists()) {
                 console.log("User data retrieved from Firestore")
                 const userData = userDocSnap.data()
                 setUser({
                   id: firebaseUser.uid,
-                  name: userData.name || firebaseUser.displayName || "User",
-                  email: userData.email || firebaseUser.email || "",
-                  role: userData.role || "regular",
-                  createdAt: userData.createdAt || firebaseUser.metadata.creationTime || new Date().toISOString(),
-                })
+                  name: firebaseUser.displayName || "User",
+                  email: firebaseUser.email || "",
+                  phoneNumber: firebaseUser.phoneNumber || "",   // ➊ always include it
+                  phoneVerified: false,                            // ➋ keep shape consistent
+                  role: "regular",
+                  createdAt:
+                    firebaseUser.metadata.creationTime || new Date().toISOString(),
+                });
               } else {
                 console.log("No user data found in Firestore, using Firebase user data")
                 // Fallback to basic user data from Firebase Auth
@@ -105,6 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   id: firebaseUser.uid, // Ensure ID is set from Firebase Auth
                   name: firebaseUser.displayName || "User",
                   email: firebaseUser.email || "",
+                  phoneNumber: firebaseUser.phoneNumber || "",
+                  phoneVerified: false,
                   role: "regular", // Default role
                   createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                 })
@@ -115,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   await setDoc(userDocRef, {
                     name: firebaseUser.displayName || "User",
                     email: firebaseUser.email || "",
+                    phoneNumber: null,
+                    phoneVerified: false,
                     role: "regular",
                     createdAt: new Date().toISOString(),
                   })
@@ -178,10 +191,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const signUp = async (name: string, email: string, password: string, phoneNumber: string) => {
     setLoading(true)
     try {
-      await firebaseSignUp(name, email, password)
+      await firebaseSignUp(name, email, password, phoneNumber)
       // The auth state listener will handle setting the user
     } catch (error) {
       console.error("Sign up error:", error)
@@ -201,9 +214,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error
     }
   }
+  const updateUserProfile = async (
+    userId: string,
+    data: { name?: string; phoneNumber?: string }
+  ) => {
+    await firebaseUpdateUserProfile(userId, data)       // ② call your lib fn
 
+    // keep local state in sync so the UI mirrors Firestore immediately
+    setUser((prev) => (prev && prev.id === userId ? { ...prev, ...data } : prev))
+  }
   return (
-    <AuthContext.Provider value={{ user, loading, connectionBlocked, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, connectionBlocked, signIn, signUp, signOut, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   )

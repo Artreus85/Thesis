@@ -1,5 +1,4 @@
 import { refreshS3Url } from "./s3"
-import { isPreviewEnvironment } from "./environment"
 
 /**
  * Process image URLs to ensure they're valid and not expired
@@ -7,7 +6,6 @@ import { isPreviewEnvironment } from "./environment"
  * @returns Processed image URLs
  */
 export async function processImageUrls(urls: string[]): Promise<string[]> {
-
   // Filter out any null or undefined values
   const validUrls = urls.filter((url) => !!url)
 

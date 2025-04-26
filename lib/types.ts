@@ -2,8 +2,10 @@ export interface User {
   id: string
   name: string
   email: string
+  phoneNumber?: string
   role: "admin" | "regular"
   createdAt: string
+  phoneVerified?: boolean
 }
 
 export interface Car {

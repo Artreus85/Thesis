@@ -59,7 +59,7 @@ export function FavoriteButton({
           favorited ? "fill-yellow-500 group-hover:fill-yellow-600" : "fill-none group-hover:fill-yellow-500",
         )}
       />
-      {showText && <span className="ml-2">{favorited ? "Favorited" : "Favorite"}</span>}
+      {showText && <span className="ml-2">{favorited ? "Запазено" : "Запази"}</span>}
       <span className="sr-only">{favorited ? "Remove from favorites" : "Add to favorites"}</span>
     </Button>
   )

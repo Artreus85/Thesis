@@ -9,7 +9,7 @@ export default function NotAuthorizedPage() {
   const carId = params.id as string
   const router = useRouter()
 
-  // After 5 seconds, redirect to the car detail page
+  // След 5 секунди пренасочване към страницата на обявата
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push(`/cars/${carId}`)
@@ -20,9 +20,9 @@ export default function NotAuthorizedPage() {
 
   return (
     <UnauthorizedAccess
-      message="You are not authorized to edit this listing. Only the listing owner or an administrator can modify this content."
+      message="Нямате разрешение да редактирате тази обява. Само собственикът на обявата или администратор може да я променя."
       redirectUrl={`/cars/${carId}`}
-      redirectLabel="View Listing"
+      redirectLabel="Прегледай обявата"
     />
   )
 }

@@ -17,26 +17,15 @@ export const CAR_BRANDS = [
   "Volvo",
 ]
 
-export const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG", "CNG"]
+export const FUEL_TYPES = ["Бензин", "Дизел", "Хибрид", "Електрически", "Пропан-бутан (LPG)", "Метан (CNG)"]
 
-export const GEARBOX_TYPES = ["Manual", "Automatic", "Semi-automatic", "CVT"]
+export const GEARBOX_TYPES = ["Ръчна", "Автоматична", "Полуавтоматична", "CVT"]
 
-export const CONDITIONS = ["New", "Used", "Certified Pre-Owned"]
+export const CONDITIONS = ["Нова", "Употребявана", "Сертифицирана (втора ръка)"]
 
-export const BODY_TYPES = [
-  "Sedan",
-  "SUV",
-  "Hatchback",
-  "Coupe",
-  "Convertible",
-  "Wagon",
-  "Van",
-  "Minivan",
-  "Pickup",
-  "Truck",
-]
+export const BODY_TYPES = ["Седан", "SUV", "Хечбек", "Купе", "Кабрио", "Комби"]
 
-export const DRIVE_TYPES = ["Предно задвижване", "Задно задвижване", "4x4"]
+export const DRIVE_TYPES = ["Предно задвижване", "Задно задвижване", "4x4 / AWD"]
 
 export const COLORS = [
   "Черен",
@@ -51,5 +40,5 @@ export const COLORS = [
   "Оранжев",
   "Лилав",
   "Златен",
-  "Бежаво",
+  "Бежов",
 ]

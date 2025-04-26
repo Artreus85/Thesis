@@ -68,10 +68,8 @@ export async function signIn(email: string, password: string): Promise<void> {
   }
 }
 
-/**
- * Sign up with email and password
- */
-export async function signUp(name: string, email: string, password: string): Promise<void> {
+// Update the signUp function to include phoneNumber
+export async function signUp(name: string, email: string, password: string, phoneNumber?: string): Promise<void> {
   try {
     // Create the user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -86,6 +84,8 @@ export async function signUp(name: string, email: string, password: string): Pro
     await setDoc(doc(db, "users", user.uid), {
       name: name,
       email: email,
+      phoneNumber: phoneNumber || null,
+      phoneVerified: false,
       role: "regular",
       createdAt: new Date().toISOString(),
     })
@@ -125,6 +125,106 @@ export async function getAllUsers(): Promise<User[]> {
   } catch (error) {
     console.error("Error fetching users:", error)
     return []
+  }
+}
+
+/**
+ * Add a function to update user profile
+ */
+export async function updateUserProfile(userId: string, data: { name?: string; phoneNumber?: string }): Promise<void> {
+  try {
+    const userRef = doc(db, "users", userId)
+
+    // Update the user document in Firestore
+    await updateDoc(userRef, {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+
+    // If name is being updated, also update the Firebase Auth profile
+    if (data.name && auth.currentUser) {
+      await updateProfile(auth.currentUser, {
+        displayName: data.name,
+      })
+    }
+
+    console.log(`User profile updated for ${userId}`)
+  } catch (error) {
+    console.error("Error updating user profile:", error)
+    throw error
+  }
+}
+
+// Add functions for phone verification
+export async function sendVerificationCode(userId: string, phoneNumber: string): Promise<void> {
+  try {
+    // In a real implementation, you would integrate with a service like Twilio, Firebase Phone Auth, etc.
+    // For this example, we'll simulate sending a code
+
+    // Generate a random 6-digit code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // Store the code in Firestore with an expiration time (10 minutes from now)
+    const verificationRef = doc(db, "phoneVerifications", userId)
+    await setDoc(verificationRef, {
+      phoneNumber,
+      code: verificationCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes from now
+      createdAt: new Date().toISOString(),
+    })
+
+    console.log(`Verification code sent to ${phoneNumber}: ${verificationCode}`)
+
+    // In a real implementation, you would send an SMS here
+    // For demo purposes, we'll just log the code to the console
+
+    return
+  } catch (error) {
+    console.error("Error sending verification code:", error)
+    throw error
+  }
+}
+
+export async function verifyPhoneNumber(userId: string, code: string): Promise<boolean> {
+  try {
+    // Get the verification document
+    const verificationRef = doc(db, "phoneVerifications", userId)
+    const verificationDoc = await getDoc(verificationRef)
+
+    if (!verificationDoc.exists()) {
+      console.error("No verification found for user")
+      return false
+    }
+
+    const verification = verificationDoc.data()
+
+    // Check if the code has expired
+    const expiresAt = new Date(verification.expiresAt)
+    if (expiresAt < new Date()) {
+      console.error("Verification code has expired")
+      return false
+    }
+
+    // Check if the code matches
+    if (verification.code !== code) {
+      console.error("Invalid verification code")
+      return false
+    }
+
+    // Update the user's phoneVerified status
+    const userRef = doc(db, "users", userId)
+    await updateDoc(userRef, {
+      phoneVerified: true,
+      updatedAt: new Date().toISOString(),
+    })
+
+    // Delete the verification document
+    await deleteDoc(verificationRef)
+
+    return true
+  } catch (error) {
+    console.error("Error verifying phone number:", error)
+    throw error
   }
 }
 
@@ -202,101 +302,99 @@ export async function toggleListingVisibility(listingId: string, isVisible: bool
 
 // Update the getFilteredCars function to handle more filters
 export async function getFilteredCars(searchParams: {
-  brand?: string;
-  model?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  minYear?: string;
-  maxYear?: string;
-  fuel?: string;
-  condition?: string;
-  bodyType?: string;
-  driveType?: string;
-  gearbox?: string;
-  query?: string;
+  brand?: string
+  model?: string
+  minPrice?: string
+  maxPrice?: string
+  minYear?: string
+  maxYear?: string
+  fuel?: string
+  condition?: string
+  bodyType?: string
+  driveType?: string
+  gearbox?: string
+  query?: string
 }): Promise<Car[]> {
   // Build your base Ref
-  const carsRef = collection(db, "cars");
-  console.log("Getting filtered cars with params:", searchParams);
+  const carsRef = collection(db, "cars")
+  console.log("Getting filtered cars with params:", searchParams)
 
   try {
     // 1) Start building the Firestore query
-    let q = query(carsRef);
+    let q = query(carsRef)
 
     // 2) Equality filters
     if (searchParams.brand && searchParams.brand !== "any") {
-      q = query(q, where("brand", "==", searchParams.brand));
+      q = query(q, where("brand", "==", searchParams.brand))
     }
     if (searchParams.fuel && searchParams.fuel !== "any") {
-      q = query(q, where("fuel", "==", searchParams.fuel));
+      q = query(q, where("fuel", "==", searchParams.fuel))
     }
     if (searchParams.condition && searchParams.condition !== "any") {
-      q = query(q, where("condition", "==", searchParams.condition));
+      q = query(q, where("condition", "==", searchParams.condition))
     }
     if (searchParams.bodyType && searchParams.bodyType !== "any") {
-      q = query(q, where("bodyType", "==", searchParams.bodyType));
+      q = query(q, where("bodyType", "==", searchParams.bodyType))
     }
     if (searchParams.driveType && searchParams.driveType !== "any") {
-      q = query(q, where("driveType", "==", searchParams.driveType));
+      q = query(q, where("driveType", "==", searchParams.driveType))
     }
     if (searchParams.gearbox && searchParams.gearbox !== "any") {
-      q = query(q, where("gearbox", "==", searchParams.gearbox));
+      q = query(q, where("gearbox", "==", searchParams.gearbox))
     }
 
     // 3) Range filter on year (Firestore allows only one range per query)
     if (searchParams.minYear && searchParams.minYear !== "2000") {
-      const minY = Number.parseInt(searchParams.minYear, 10);
-      q = query(q, where("year", ">=", minY));
+      const minY = Number.parseInt(searchParams.minYear, 10)
+      q = query(q, where("year", ">=", minY))
       // MUST orderBy the same field you range on
-      q = query(q, orderBy("year", "desc"));
+      q = query(q, orderBy("year", "desc"))
     }
 
     // 4) Secondary ordering by creation date
-    q = query(q, orderBy("createdAt", "desc"));
+    q = query(q, orderBy("createdAt", "desc"))
 
-    console.log("Executing filtered query...");
-    const snapshot = await getDocs(q);
-    console.log(`Query returned ${snapshot.docs.length} cars before client-side filtering`);
+    console.log("Executing filtered query...")
+    const snapshot = await getDocs(q)
+    console.log(`Query returned ${snapshot.docs.length} cars before client-side filtering`)
 
     // 5) Map to your Car type
     let results = snapshot.docs.map((doc) => {
-      const data = doc.data() as any;
+      const data = doc.data() as any
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate
-          ? data.createdAt.toDate().toISOString()
-          : data.createdAt,
-      } as Car;
-    });
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+      } as Car
+    })
 
     // 6) Client‑side filtering for things Firestore can’t handle
     if (searchParams.model?.trim()) {
-      const m = searchParams.model.toLowerCase();
-      results = results.filter((c) => c.model?.toLowerCase().includes(m));
-      console.log(`After model filter: ${results.length} cars`);
+      const m = searchParams.model.toLowerCase()
+      results = results.filter((c) => c.model?.toLowerCase().includes(m))
+      console.log(`After model filter: ${results.length} cars`)
     }
 
     if (searchParams.maxYear && +searchParams.maxYear !== new Date().getFullYear()) {
-      const maxY = Number.parseInt(searchParams.maxYear, 10);
-      results = results.filter((c) => c.year <= maxY);
-      console.log(`After maxYear filter: ${results.length} cars`);
+      const maxY = Number.parseInt(searchParams.maxYear, 10)
+      results = results.filter((c) => c.year <= maxY)
+      console.log(`After maxYear filter: ${results.length} cars`)
     }
 
     if (searchParams.minPrice && +searchParams.minPrice > 0) {
-      const minP = Number.parseInt(searchParams.minPrice, 10);
-      results = results.filter((c) => c.price >= minP);
-      console.log(`After minPrice filter: ${results.length} cars`);
+      const minP = Number.parseInt(searchParams.minPrice, 10)
+      results = results.filter((c) => c.price >= minP)
+      console.log(`After minPrice filter: ${results.length} cars`)
     }
 
-    if (searchParams.maxPrice && +searchParams.maxPrice < Infinity) {
-      const maxP = Number.parseInt(searchParams.maxPrice, 10);
-      results = results.filter((c) => c.price <= maxP);
-      console.log(`After maxPrice filter: ${results.length} cars`);
+    if (searchParams.maxPrice && +searchParams.maxPrice < Number.POSITIVE_INFINITY) {
+      const maxP = Number.parseInt(searchParams.maxPrice, 10)
+      results = results.filter((c) => c.price <= maxP)
+      console.log(`After maxPrice filter: ${results.length} cars`)
     }
 
     if (searchParams.query?.trim()) {
-      const ql = searchParams.query.toLowerCase();
+      const ql = searchParams.query.toLowerCase()
       results = results.filter(
         (c) =>
           c.brand.toLowerCase().includes(ql) ||
@@ -304,34 +402,31 @@ export async function getFilteredCars(searchParams: {
           c.description.toLowerCase().includes(ql) ||
           (c.bodyType ?? "").toLowerCase().includes(ql) ||
           (c.color ?? "").toLowerCase().includes(ql) ||
-          c.condition.toLowerCase().includes(ql)
-      );
-      console.log(`After text query filter: ${results.length} cars`);
+          c.condition.toLowerCase().includes(ql),
+      )
+      console.log(`After text query filter: ${results.length} cars`)
     }
 
     // 7) Fallback if no matches and filters were specified
     if (results.length === 0 && Object.keys(searchParams).length > 0) {
-      console.log("No results found with filters, falling back to all cars");
-      const allSnap = await getDocs(query(carsRef, orderBy("createdAt", "desc")));
+      console.log("No results found with filters, falling back to all cars")
+      const allSnap = await getDocs(query(carsRef, orderBy("createdAt", "desc")))
       results = allSnap.docs.map((doc) => {
-        const data = doc.data() as any;
+        const data = doc.data() as any
         return {
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt,
-        } as Car;
-      });
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        } as Car
+      })
     }
 
-    console.log(`Returning ${results.length} cars after all filtering`);
-    return results;
-
+    console.log(`Returning ${results.length} cars after all filtering`)
+    return results
   } catch (error: any) {
     // Surface the Firestore error so you can click through to create the missing index
-    console.error("Error fetching filtered cars:", error);
-    throw error; // or `return []` if you really want to swallow it
+    console.error("Error fetching filtered cars:", error)
+    throw error // or `return []` if you really want to swallow it
   }
 }
 
@@ -371,10 +466,7 @@ export async function getCarById(carId: string): Promise<Car | null> {
 /**
  * Create a car listing
  */
-export async function createCarListing(
-  carData: Omit<Car, "id">,
-  images?: File[]
-): Promise<string> {
+export async function createCarListing(carData: Omit<Car, "id">, images?: File[]): Promise<string> {
   try {
     console.log("Starting car listing creation process")
 
@@ -391,10 +483,7 @@ export async function createCarListing(
       } catch (uploadError) {
         console.error("Error uploading images:", uploadError)
         // Fallback to placeholder images if upload fails
-        imageUrls = images.map(
-          (_, index) =>
-            `/placeholder.svg?height=600&width=800&query=car ${index + 1}`
-        )
+        imageUrls = images.map((_, index) => `/placeholder.svg?height=600&width=800&query=car ${index + 1}`)
         console.log("Using placeholder images instead:", imageUrls)
       }
     }

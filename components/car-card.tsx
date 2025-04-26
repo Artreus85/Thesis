@@ -36,14 +36,16 @@ export function CarCard({ car }: CarCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video overflow-hidden">
-        <Image
-          src={imageError ? getValidImageUrl(null, car) : imageUrl}
-          alt={`${car.brand} ${car.model}`}
-          fill
-          className="object-cover transition-transform hover:scale-105"
-          onError={handleImageError}
-          unoptimized // Use this for external URLs
-        />
+        {imageUrl && (
+          <Image
+            src={imageError ? getValidImageUrl(null, car) : imageUrl}
+            alt={`${car.brand} ${car.model}`}
+            fill
+            className="object-cover"
+            onError={handleImageError}
+            unoptimized
+          />
+        )}
         <FavoriteButton
           carId={car.id}
           className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
@@ -56,7 +58,7 @@ export function CarCard({ car }: CarCardProps) {
             <h3 className="font-semibold">
               {car.brand} {car.model}
             </h3>
-            <span className="font-bold text-lg">${car.price?.toLocaleString() || "N/A"}</span>
+            <span className="font-bold text-lg">{car.price?.toLocaleString() || "N/A"} лв.</span>
           </div>
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
             <div className="flex items-center">
@@ -65,7 +67,7 @@ export function CarCard({ car }: CarCardProps) {
             </div>
             <div className="flex items-center">
               <Gauge className="mr-1 h-4 w-4" />
-              <span>{car.mileage?.toLocaleString() || "N/A"} mi</span>
+              <span>{car.mileage?.toLocaleString() || "N/A"} км</span>
             </div>
             <div className="flex items-center">
               <Fuel className="mr-1 h-4 w-4" />
@@ -77,7 +79,7 @@ export function CarCard({ car }: CarCardProps) {
       <CardFooter className="p-4 pt-0">
         <Link href={`/cars/${car.id}`} className="w-full">
           <Button variant="outline" className="w-full">
-            Вижте
+            Вижте подробности
           </Button>
         </Link>
       </CardFooter>

@@ -18,8 +18,8 @@ export default function AdminDebugPage() {
   const handleSetAdmin = async () => {
     if (!userId) {
       toast({
-        title: "Error",
-        description: "Please enter a user ID",
+        title: "Грешка",
+        description: "Моля, въведете потребителско ID",
         variant: "destructive",
       })
       return
@@ -27,19 +27,18 @@ export default function AdminDebugPage() {
 
     setIsSettingAdmin(true)
     try {
-      // Dynamically import to prevent build errors
       const { setUserAsAdmin } = await import("@/lib/firebase")
       await setUserAsAdmin(userId)
 
       toast({
-        title: "Success",
-        description: `User ${userId} has been set as admin`,
+        title: "Успешно",
+        description: `Потребител ${userId} е назначен като админ`,
       })
     } catch (error) {
-      console.error("Error setting user as admin:", error)
+      console.error("Грешка при задаване на админ:", error)
       toast({
-        title: "Error",
-        description: "Failed to set user as admin",
+        title: "Грешка",
+        description: "Неуспешно задаване на потребителя като админ",
         variant: "destructive",
       })
     } finally {
@@ -58,27 +57,27 @@ export default function AdminDebugPage() {
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-        <p className="mb-6">Please log in to access this page</p>
-        <Button onClick={() => router.push("/auth/login")}>Log In</Button>
+        <h1 className="text-2xl font-bold mb-4">Необходима е автентикация</h1>
+        <p className="mb-6">Моля, влезте в профила си, за да получите достъп до страницата</p>
+        <Button onClick={() => router.push("/auth/login")}>Вход</Button>
       </div>
     )
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Debug Tools</h1>
+      <h1 className="text-2xl font-bold mb-6">Админ инструменти за отстраняване на грешки</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Current User Info</CardTitle>
-            <CardDescription>Details about your current authentication</CardDescription>
+            <CardTitle>Информация за текущия потребител</CardTitle>
+            <CardDescription>Детайли за вашата текуща сесия</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div>
-                <span className="font-medium">Идентификационен номер на потребителя:</span> {user.id}
+                <span className="font-medium">Потребителско ID:</span> {user.id}
               </div>
               <div>
                 <span className="font-medium">Име:</span> {user.name}
@@ -90,7 +89,7 @@ export default function AdminDebugPage() {
                 <span className="font-medium">Роля:</span> {user.role}
               </div>
               <div>
-                <span className="font-medium">Регистриран на:</span> {new Date(user.createdAt).toLocaleString()}
+                <span className="font-medium">Създаден на:</span> {new Date(user.createdAt).toLocaleString()}
               </div>
             </div>
           </CardContent>
@@ -98,23 +97,27 @@ export default function AdminDebugPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Дайте права на админ</CardTitle>
-            <CardDescription>Promote a user to admin role</CardDescription>
+            <CardTitle>Назначаване на потребител като админ</CardTitle>
+            <CardDescription>Промотиране на потребител до админ роля</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Потребителски идентификационен номер</label>
-                <Input placeholder="Enter user ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
+                <label className="text-sm font-medium">Потребителско ID</label>
+                <Input
+                  placeholder="Въведете потребителско ID"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Enter the Firebase Auth UID of the user you want to promote
+                  Въведете Firebase UID на потребителя, който искате да направите админ
                 </p>
               </div>
             </div>
           </CardContent>
           <CardFooter>
             <Button onClick={handleSetAdmin} disabled={isSettingAdmin || !userId} className="w-full">
-              {isSettingAdmin ? "Setting Admin..." : "Set as Admin"}
+              {isSettingAdmin ? "Задаване..." : "Назначи като Админ"}
             </Button>
           </CardFooter>
         </Card>
@@ -122,10 +125,10 @@ export default function AdminDebugPage() {
 
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground mb-4">
-          Настоящия ти идентификационен потребителски номер:<code className="bg-muted px-1 py-0.5 rounded">{user.id}</code>
+          Вашето текущо потребителско ID е: <code className="bg-muted px-1 py-0.5 rounded">{user.id}</code>
         </p>
         <Button variant="outline" onClick={() => router.push("/admin")}>
-          Обратно към админския панел
+          Обратно към Админ панела
         </Button>
       </div>
     </div>

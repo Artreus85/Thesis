@@ -12,60 +12,27 @@ export function Footer() {
               <span className="font-bold">CarMarket</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Намерете перфектната за вас кола
+              Намери перфектния автомобил в нашата доверена платформа. Купувай и продавай с увереност.
             </p>
           </div>
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Explore</h3>
+            <h3 className="text-sm font-medium">Разгледай</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/cars" className="text-muted-foreground hover:text-foreground">
-                  Каталог
+                  Разгледай автомобили
                 </Link>
               </li>
               <li>
                 <Link href="/listings/create" className="text-muted-foreground hover:text-foreground">
-                  Пуснете колата си за продажба
+                  Продай автомобил
                 </Link>
               </li>
-              <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground">
-                  About Us
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Resources</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/help" className="text-muted-foreground hover:text-foreground">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-muted-foreground hover:text-foreground">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
-                  Privacy Policy
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Contact</h3>
-            <ul className="space-y-2 text-sm">
-              <li className="text-muted-foreground">Email: support@carmarket.com</li>
-              <li className="text-muted-foreground">Phone: +1 (555) 123-4567</li>
-              <li className="text-muted-foreground">Address: 123 Market St, San Francisco, CA</li>
             </ul>
           </div>
         </div>
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> CarMarket. All rights reserved.
+          &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> CarMarket. Всички права запазени.
         </div>
       </div>
     </footer>

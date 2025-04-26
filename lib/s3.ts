@@ -1,7 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { isPreviewEnvironment } from "./environment"
-import { mockUploadToS3, mockUploadMultipleToS3 } from "./fallback"
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -18,7 +16,6 @@ const bucketName = process.env.NEXT_PUBLIC_AWS_S3_BUCKET_NAME!
  * Upload a file to S3
  */
 export async function uploadFileToS3(file: File): Promise<string> {
-
   const fileBuffer = await file.arrayBuffer()
   const fileName = `car-images/${Date.now()}-${file.name.replace(/\s+/g, "-").toLowerCase()}`
 
@@ -55,8 +52,6 @@ export async function uploadFileToS3(file: File): Promise<string> {
  * Upload multiple files to S3
  */
 export async function uploadFilesToS3(files: File[]): Promise<string[]> {
-
-
   console.log(`Uploading ${files.length} files to S3`)
 
   // Check if AWS credentials are available
