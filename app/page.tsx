@@ -44,17 +44,14 @@ export default function Home() {
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
                 Намери перфектната кола за теб
               </h1>
-              <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
-                Разгледай хиляди обяви от проверени продавачи. Намери идеалния автомобил за твоите нужди и бюджет.
-              </p>
             </div>
             <div className="space-x-4">
               <Link href="/cars">
-                <Button size="lg">Разгледай обяви</Button>
+                <Button size="lg">Разгледай обяви за автомобили</Button>
               </Link>
               <Link href="/listings/create">
                 <Button variant="outline" size="lg">
-                  Продай колата си
+                  Обяви автомобила си за продажба 
                 </Button>
               </Link>
             </div>

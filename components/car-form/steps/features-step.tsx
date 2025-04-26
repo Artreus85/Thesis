@@ -18,7 +18,7 @@ export function FeaturesStep({ form }: FeaturesStepProps) {
             <FormLabel>Екстри (по избор)</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Избройте екстрите, разделени със запетая (напр. Кожен салон, Навигация, Шибедах)"
+                placeholder="Избройте екстрите, разделени със запетая (напр. Кожен салон, Навигация, Шибидах)"
                 className="min-h-20"
                 {...field}
               />

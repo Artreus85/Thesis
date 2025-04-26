@@ -76,6 +76,7 @@ export function CarCard({ car }: CarCardProps) {
           </div>
         </div>
       </CardContent>
+      
       <CardFooter className="p-4 pt-0">
         <Link href={`/cars/${car.id}`} className="w-full">
           <Button variant="outline" className="w-full">
