@@ -22,8 +22,8 @@ export default function Home() {
 
         const result = await getFilteredCars(params)
 
-        setCars(result.slice(0, 8))
-        console.log(`Извлечени са ${result.length} обяви, показваме 8`)
+        setCars(result.slice(0, 100))
+        console.log(`Извлечени са ${result.length} обяви, показваме 100`)
       } catch (error) {
         console.error("Грешка при зареждане на обявите:", error)
         setCars([])
