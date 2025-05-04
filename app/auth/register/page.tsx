@@ -123,6 +123,25 @@ export default function RegisterPage() {
               label="Телефонен номер"
               placeholder="+359 88 888 8888"
             />
+
+            <div className="space-y-2">
+              <label
+                htmlFor="phone"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Телефонен номер
+              </label>
+
+            <Input
+                id="phone"
+                type="tel"
+                placeholder="+359 88 888 8888"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="password"
