@@ -115,15 +115,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-
-            <PhoneInput
-              value={phoneNumber}
-              onChange={setPhoneNumber}
-              required
-              label="Телефонен номер"
-              placeholder="+359 88 888 8888"
-            />
-
+            
             <div className="space-y-2">
               <label
                 htmlFor="phone"
