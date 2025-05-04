@@ -78,8 +78,8 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <Car className="h-10 w-10" />
           </div>
-          <CardTitle className="text-2xl text-center">Създай акаунт</CardTitle>
-          <CardDescription className="text-center">Въведете информация, за да създадете акаунт</CardDescription>
+          <CardTitle className="text-2xl text-center">Създай профил</CardTitle>
+          <CardDescription className="text-center">Въведете информация, за да създадете профил</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -156,10 +156,10 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Създаване на акаунт..." : "Създай акаунт"}
+              {isLoading ? "Създаване на профил..." : "Създай профил"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Вече имаш акаунт?{" "}
+              Вече имате профил?{" "}
               <Link href="/auth/login" className="text-primary hover:underline">
                 Вход
               </Link>

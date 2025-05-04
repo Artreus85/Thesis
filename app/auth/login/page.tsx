@@ -75,7 +75,7 @@ export default function LoginPage() {
             <Car className="h-10 w-10" />
           </div>
           <CardTitle className="text-2xl text-center">Вход</CardTitle>
-          <CardDescription className="text-center">Въведете имейл и парола, за да влезете в акаунта си</CardDescription>
+          <CardDescription className="text-center">Въведете имейл и парола, за да влезете в профила си</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -103,9 +103,6 @@ export default function LoginPage() {
                 >
                   Парола
                 </label>
-                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                  Забравена парола?
-                </Link>
               </div>
               <Input
                 id="password"
@@ -121,7 +118,7 @@ export default function LoginPage() {
               {isLoading ? "Влизане..." : "Влез"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Нямате акаунт?{" "}
+              Нямате профил?{" "}
               <Link href="/auth/register" className="text-primary hover:underline">
                 Регистрирай се
               </Link>
