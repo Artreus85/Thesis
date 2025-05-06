@@ -11,9 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/auth"
-// First, import the PhoneInput component
-import { PhoneInput } from "@/components/phone-input"
-
 export default function RegisterPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -115,7 +112,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <label
                 htmlFor="phone"
@@ -124,14 +121,14 @@ export default function RegisterPage() {
                 Телефонен номер
               </label>
 
-            <Input
-                id="phone"
-                type="tel"
-                placeholder="+359 88 888 8888"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
+              <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+359 88 888 8888"
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
             </div>
 
             <div className="space-y-2">
