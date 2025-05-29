@@ -99,14 +99,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const userData = userDocSnap.data()
                 setUser({
                   id: firebaseUser.uid,
-                  name: firebaseUser.displayName || "User",
+                  name: userData.name || firebaseUser.displayName || "User",
                   email: firebaseUser.email || "",
-                  phoneNumber: firebaseUser.phoneNumber || "",   // ➊ always include it
-                  phoneVerified: false,                            // ➋ keep shape consistent
-                  role: "regular",
-                  createdAt:
-                    firebaseUser.metadata.creationTime || new Date().toISOString(),
-                });
+                  phoneNumber: userData.phoneNumber || firebaseUser.phoneNumber || "",
+                  phoneVerified: userData.phoneVerified ?? false,
+                  role: userData.role || "regular", // ✅ pull from Firestore
+                  createdAt: userData.createdAt || firebaseUser.metadata.creationTime || new Date().toISOString(),
+                })
               } else {
                 console.log("No user data found in Firestore, using Firebase user data")
                 // Fallback to basic user data from Firebase Auth
