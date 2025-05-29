@@ -51,11 +51,12 @@ export function CarCard({ car }: CarCardProps) {
           className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
           icon={Star}
         />
-        
+
         <FavoriteButton
           carId={car.id}
           className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
           icon={CheckCircle}
+          onCLick={() => console.log("Check Circle Clicked")}
         />
         <Badge className="absolute left-2 top-2">{car.condition}</Badge>
       </div>

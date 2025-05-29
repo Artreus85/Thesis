@@ -14,6 +14,7 @@ interface FavoriteButtonProps {
   size?: "default" | "sm" | "lg" | "icon"
   className?: string
   showText?: boolean
+  onCLick?: () => void
   icon: LucideIcon
 }
 
