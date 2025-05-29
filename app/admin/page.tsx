@@ -23,13 +23,35 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // 1. While still loading auth state, show spinner
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // 2. If no user, redirect to login
+  if (!user) {
+    if (typeof window !== "undefined") router.push("/auth/login")
+    return null
+  }
+
+  // 3. If user is not admin, redirect to home
+  if (user.role !== "admin") {
+    if (typeof window !== "undefined") router.push("/")
+    return null
+  }
+
+  /*
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
         console.log("Няма потребител, пренасочване...")
         router.push("/auth/login")
         return
-      } 
+      }
       else if (user.role !== "admin") {
         console.log("Потребителят не е администратор, пренасочване...")
         router.push("/")
@@ -37,6 +59,7 @@ export default function AdminPage() {
       }
     }
   }, [user, authLoading, router])
+  */
 
   useEffect(() => {
     if (!authLoading && user && user.role === "admin") {
