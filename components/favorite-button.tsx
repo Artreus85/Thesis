@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Star } from "lucide-react"
+import { LucideIcon, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useFavorites } from "@/hooks/use-favorites"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,7 @@ interface FavoriteButtonProps {
   size?: "default" | "sm" | "lg" | "icon"
   className?: string
   showText?: boolean
+  icon: LucideIcon
 }
 
 export function FavoriteButton({

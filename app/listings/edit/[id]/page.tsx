@@ -114,7 +114,7 @@ export default function EditListingPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Редактиране на обява</h1>
         <p className="text-muted-foreground mt-2">
-          Актуализирайте ��нформацията за вашия {car.brand} {car.model}
+          Актуализирайте информацията за вашия {car.brand} {car.model}
         </p>
       </div>
 

@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Calendar, Fuel, Gauge } from "lucide-react"
+import { Calendar, CheckCircle, Fuel, Gauge, Star} from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,6 +49,13 @@ export function CarCard({ car }: CarCardProps) {
         <FavoriteButton
           carId={car.id}
           className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
+          icon={Star}
+        />
+        
+        <FavoriteButton
+          carId={car.id}
+          className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
+          icon={CheckCircle}
         />
         <Badge className="absolute left-2 top-2">{car.condition}</Badge>
       </div>
