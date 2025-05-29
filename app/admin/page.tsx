@@ -23,58 +23,27 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 1. While still loading auth state, show spinner
-  if (authLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  // 2. If no user, redirect to login
-  if (!user) {
-    if (typeof window !== "undefined") router.push("/auth/login")
-    return null
-  }
-
-  // 3. If user is not admin, redirect to home
-  if (user.role !== "admin") {
-    if (typeof window !== "undefined") router.push("/")
-    return null
-  }
-
-  /*
+  // Redirect non-admin or unauthenticated users inside useEffect
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        console.log("Няма потребител, пренасочване...")
         router.push("/auth/login")
-        return
-      }
-      else if (user.role !== "admin") {
-        console.log("Потребителят не е администратор, пренасочване...")
+      } else if (user.role !== "admin") {
         router.push("/")
-        return
       }
     }
   }, [user, authLoading, router])
-  */
 
+  // Fetch data only if admin user is confirmed
   useEffect(() => {
-    if (!authLoading && user && user.role === "admin") {
+    if (!authLoading && user?.role === "admin") {
       const fetchData = async () => {
         try {
-          console.log("Зареждане на данни като администратор:", user.id)
           setIsLoading(true)
-
           const [usersData, listingsData] = await Promise.all([getAllUsers(), getAllListings()])
           setUsers(usersData)
           setListings(listingsData)
-          console.log(`Заредени са ${usersData.length} потребители и ${listingsData.length} обяви`)
-        } 
-        catch (error) {
-          console.error("Грешка при зареждане:", error)
+        } catch (error) {
           setError("Неуспешно зареждане на админ данни. Опитайте отново.")
           toast({
             title: "Грешка",
@@ -85,10 +54,35 @@ export default function AdminPage() {
           setIsLoading(false)
         }
       }
-
       fetchData()
     }
   }, [user, authLoading, toast])
+
+  // Show loading spinner while auth or data loading or redirecting
+  if (authLoading || isLoading || !user || user.role !== "admin") {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // Show error alert if loading data failed
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertTitle>Грешка</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+
+        <div className="flex justify-center mt-8">
+          <Button onClick={() => window.location.reload()}>Опитай отново</Button>
+        </div>
+      </div>
+    )
+  }
 
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm("Сигурни ли сте, че искате да изтриете този потребител?")) {
@@ -148,46 +142,6 @@ export default function AdminPage() {
     }
   }
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Достъп отказан</AlertTitle>
-          <AlertDescription>Нямате достъп до админ панела. Моля, влезте с администраторски акаунт.</AlertDescription>
-        </Alert>
-
-        <div className="flex justify-center mt-8">
-          <Button onClick={() => router.push("/auth/login")}>Вход</Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Грешка</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-
-        <div className="flex justify-center mt-8">
-          <Button onClick={() => window.location.reload()}>Опитай отново</Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -232,7 +186,7 @@ export default function AdminPage() {
                         {listing.brand} {listing.model}
                       </TableCell>
                       <TableCell>{listing.price.toLocaleString()} лв.</TableCell>
-                      <TableCell>{listing.userId.substring(0, 8)}...</TableCell>
+                      <TableCell>{listing.userId.substring(0, 100)}...</TableCell>
                       <TableCell>
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${

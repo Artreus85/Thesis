@@ -95,6 +95,20 @@ export default function CarDetailPage() {
   const images = car.images || []
   const features = car.features ? car.features.split(",").map((f: string) => f.trim()) : []
 
+  if(!car.isVisible) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert>
+          <AlertTitle>Автомобилът не е наличен</AlertTitle>
+          <AlertDescription>Този автомобил вече не е в продажба или е скрит от обявата.</AlertDescription>
+        </Alert>
+        <div className="flex justify-center mt-6">
+          <Button onClick={() => router.push("/cars")}>Разгледай други коли</Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
