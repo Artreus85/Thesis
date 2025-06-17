@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Calendar, CheckCircle, Fuel, Gauge, Star} from "lucide-react"
+import { Calendar, CheckCircle, Fuel, Gauge, Heart, Star} from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,18 +46,22 @@ export function CarCard({ car }: CarCardProps) {
             unoptimized
           />
         )}
-        <FavoriteButton
-          carId={car.id}
-          className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
-          icon={Star}
-        />
 
-        <FavoriteButton
-          carId={car.id}
-          className="absolute right-2 top-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
-          icon={CheckCircle}
-          onCLick={() => console.log("Check Circle Clicked")}
-        />
+        <div className="absolute top-2 right-2 flex flex-col space-y-2 z-10">
+          <FavoriteButton
+            carId={car.id}
+            className="absolute right-0.5 top-0.5 bg-white/80 backdrop-blur-sm hover:bg-white/90"
+            icon={Star}
+          />
+
+          <FavoriteButton
+            carId={car.id}
+            className="absolute right-0.5 top-12 bg-white/80 backdrop-blur-sm hover:bg-white/90"
+            icon={Heart}
+    
+          />
+        </div>
+        
         <Badge className="absolute left-2 top-2">{car.condition}</Badge>
       </div>
       <CardContent className="p-4">

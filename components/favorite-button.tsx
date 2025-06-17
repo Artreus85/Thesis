@@ -1,12 +1,15 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState } from "react"
-import { LucideIcon, Star } from "lucide-react"
+import { Star, CheckCircle, LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useFavorites } from "@/hooks/use-favorites"
 import { cn } from "@/lib/utils"
+import { Icon } from "@radix-ui/react-select"
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase" // Ensure that you have initialized and exported 'db' from your Firebase config
 
 interface FavoriteButtonProps {
   carId: string
@@ -14,7 +17,6 @@ interface FavoriteButtonProps {
   size?: "default" | "sm" | "lg" | "icon"
   className?: string
   showText?: boolean
-  onCLick?: () => void
   icon: LucideIcon
 }
 
@@ -24,12 +26,34 @@ export function FavoriteButton({
   size = "icon",
   className = "",
   showText = false,
+  icon,
 }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites()
   const [isUpdating, setIsUpdating] = useState(false)
+  const userId = "testUserId" // Added userId for authenticated user
   const favorited = isFavorited(carId)
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
+     if (!userId) throw new Error("User not logged in")
+
+    const userDocRef = doc(db, "users", userId)
+
+    if (favorited) {
+      // Remove from favorites
+      await updateDoc(userDocRef, {
+      favorites: arrayRemove(carId),
+      })
+      toggleFavorite(carId)
+    } else {
+      // Add to favorites
+      await updateDoc(userDocRef, {
+      favorites: arrayUnion(carId),
+      })
+      toggleFavorite(carId)
+    }
+    return { favorited, isFavorited, toggleFavorite }
+  }
+/*
     e.preventDefault()
     e.stopPropagation()
 
@@ -42,6 +66,7 @@ export function FavoriteButton({
       setIsUpdating(false)
     }
   }
+    */
 
   return (
     <Button
@@ -55,12 +80,15 @@ export function FavoriteButton({
       onClick={handleToggleFavorite}
       disabled={isUpdating}
     >
-      <Star
+      <Icon
         className={cn(
           "h-[1.2em] w-[1.2em] transition-all",
-          favorited ? "fill-yellow-500 group-hover:fill-yellow-600" : "fill-none group-hover:fill-yellow-500",
+          favorited
+            ? "fill-yellow-500 group-hover:fill-yellow-600"
+            : "fill-none group-hover:fill-yellow-500"
         )}
       />
+      
       {showText && <span className="ml-2">{favorited ? "Запазено" : "Запази"}</span>}
       <span className="sr-only">{favorited ? "Remove from favorites" : "Add to favorites"}</span>
     </Button>

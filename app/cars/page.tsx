@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
+import { useCompare } from "@/hooks/compare-hook"
 
 export default function CarsPage() {
   const searchParams = useSearchParams()
@@ -18,6 +19,7 @@ export default function CarsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCars, setTotalCars] = useState(0)
+  const { toggleCompare, isSelected } = useCompare()
 
   const activeFilters = {
     brand: searchParams.get("brand") || "",

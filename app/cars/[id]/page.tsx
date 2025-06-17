@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { Calendar, Fuel, Gauge, Mail, Phone, Share2, User, Car, Wrench, DoorOpen, FileText, Lock } from "lucide-react"
+import { Calendar, Fuel, Gauge, Mail, Phone, Share2, User, Car, Wrench, DoorOpen, FileText, Lock, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -125,8 +125,8 @@ export default function CarDetailPage() {
             <Badge className="absolute left-4 top-4 text-sm">{car.condition}</Badge>
             <FavoriteButton
               carId={car.id}
-              className="absolute right-4 top-4 bg-white/80 backdrop-blur-sm hover:bg-white/90"
-            />
+              className="absolute right-4 top-4 bg-white/80 backdrop-blur-sm hover:bg-white/90" icon={Star}  
+              />          
           </div>
 
           <div className="grid grid-cols-4 gap-2 mb-6">
